@@ -256,3 +256,10 @@ textarea.backup { width: 100%; min-height: 90px; border-radius: 12px; border: 0;
   .bigplay { width: 72px; height: 72px; } .bigplay svg { width: 30px; height: 30px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Short letter test */
+.qbar { height: 4px; border-radius: 2px; background: var(--fill); margin: 4px 0 14px; overflow: hidden; }
+.qbar span { display: block; height: 100%; background: var(--accent); transition: width .3s ease; }
+.score { font-size: 48px; font-weight: 700; letter-spacing: -.02em; margin: 8px 0 0; line-height: 1.1; }
+.tiles.missed { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 10px 0 4px; }
+.tiles.missed .tile { width: 72px; flex: none; }

@@ -162,16 +162,33 @@ function pickLetterTarget() {
   for (const L of pool) { x -= weight(L); if (x <= 0) return L; }
   return pool[pool.length - 1];
 }
-function startLetterTest() { LT = { right: 0, n: 0, target: null, answered: null }; nextLetterQ(); }
-function nextLetterQ() { LT.target = pickLetterTarget(); LT.answered = null; renderLetters(); play(LT.target.audio); }
+// Short test after "Done": each letter you're learning once, plus up to 3 learned letters due for review.
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function buildLetterQuiz() {
+  const t = today();
+  const group = currentGroup();
+  const due = shuffle(LETTERS.filter(L => letterLearned(L) && (letterRec(L).next || t) <= t)).slice(0, 3);
+  let q = [...group, ...due];
+  if (!q.length) q = shuffle(LETTERS).slice(0, GROUP_SIZE);
+  return shuffle(q);
+}
+let autoNext = null;
+function startLetterTest() { LT = { queue: buildLetterQuiz(), idx: 0, right: 0, missed: [], target: null, answered: null, finished: false }; askLetter(); }
+function askLetter() {
+  clearTimeout(autoNext);
+  if (LT.idx >= LT.queue.length) { LT.finished = true; LT.target = null; LT.answered = null; renderLetters(); return; }
+  LT.target = LT.queue[LT.idx]; LT.answered = null; renderLetters(); play(LT.target.audio);
+}
+function nextLetterQ() { LT.idx++; askLetter(); }
 function answerLetter(L) {
-  if (!LT || LT.answered) return;
+  if (!LT || LT.answered || LT.finished) return;
   const ok = L === LT.target;
-  LT.answered = L; LT.n++; if (ok) LT.right++;
+  LT.answered = L; if (ok) LT.right++; else LT.missed.push(LT.target);
   record(S.letters, LT.target.ch, ok);
   renderLetters();
-  play(LT.target.audio);
+  if (ok) autoNext = setTimeout(nextLetterQ, 900); else play(LT.target.audio);
 }
+function endLetterTest() { clearTimeout(autoNext); LT = null; S.ui.letter = (currentGroup()[0] || LETTERS[S.ui.letter] || LETTERS[0]).i; save(); renderLetters(); }
 
 // ---------- Views ----------
 const main = () => document.getElementById("main");
@@ -184,7 +201,7 @@ function renderLetters() {
   const learned = LETTERS.filter(letterLearned).length;
   if (S.ui.letter == null || !LETTERS[S.ui.letter]) S.ui.letter = (currentGroup()[0] || LETTERS[0]).i;
   const sel = LETTERS[S.ui.letter];
-  let h = `<div class="head"><div><p class="eyebrow">Stage 1 · Letters</p><h1 class="title">The Arabic letters</h1><p class="sub">Tap any letter to hear it.</p></div>
+  let h = `<div class="head"><div><p class="eyebrow">Stage 1 · Letters</p><h1 class="title">The Arabic letters</h1><p class="sub">Tap any letter to hear it. When you're ready, tap Done for a short test.</p></div>
     <div class="ring">${ringSvg("lr", learned / 28)}<div><b>${learned} of 28</b><span>letters learned</span></div></div></div>`;
   h += `<div class="split letters"><aside class="spot" id="spot">${LT ? letterTestCard() : letterCard(sel)}</aside>`;
   h += `<div><div class="lgrid ${LT ? "testing" : ""}" id="lgrid">` + LETTERS.map(L => {
@@ -193,11 +210,11 @@ function renderLetters() {
     if (!LT && L === sel) cls += " selected";
     if (LT && LT.answered) { if (L === LT.target) cls += " right"; else if (L === LT.answered) cls += " wrong"; }
     return `<button class="${cls}" data-i="${L.i}" aria-label="${L.name}">${st === "learned" && !LT ? `<span class="dot">${I.check}</span>` : ""}<span class="g">${L.ch}</span><small>${L.name}</small></button>`;
-  }).join("") + `</div><p class="small" style="margin-top:14px">Green letters are learned: you've picked them out correctly in Test me on two different days. Outlined letters are the ones you're learning now.</p></div></div>`;
+  }).join("") + `</div><p class="small" style="margin-top:14px">Green letters are learned: you've picked them out correctly in the test on two different days. Outlined letters are the ones you're learning now.</p></div></div>`;
   main().innerHTML = h;
   document.querySelectorAll(".ltile").forEach(b => b.onclick = () => {
     const L = LETTERS[+b.dataset.i];
-    if (LT) { if (!LT.answered) answerLetter(L); else { sayLetter(L, b); } return; }
+    if (LT) { if (LT.target && !LT.answered) answerLetter(L); else sayLetter(L, b); return; }
     S.ui.letter = L.i; save(); renderLetters(); sayLetter(L, document.querySelector(`.ltile[data-i="${L.i}"]`));
   });
   wireSpot();
@@ -213,17 +230,29 @@ function letterCard(L) {
   if (L.ch !== "ا") h += `<span class="break"></span>` + [["َ", "a"], ["ِ", "i"], ["ُ", "u"]].map(v => `<button class="tile vowel" data-say="${L.ch + v[0]}"><span class="g">${L.ch + v[0]}</span><small>${L.tr + v[1]}</small></button>`).join("");
   h += `</div>`;
   if (ex) h += `<button class="example" id="exL" aria-label="Hear ${ex.tr}"><span class="txt">${ex.en}<span>${ex.tr}</span></span><span class="ar">${ex.ar}</span></button>`;
-  h += `<div class="actions"><button class="btn primary" id="testL">Test me</button></div>`;
+  h += `<div class="actions"><button class="btn primary" id="testL">Done</button></div>`;
   return h;
 }
 function letterTestCard() {
+  const total = LT.queue.length;
+  if (LT.finished) {
+    const learned = LETTERS.filter(letterLearned).length;
+    const msg = LT.right === total ? "All right. Come back tomorrow and pass again to lock these letters in." : "Tap a letter you missed to hear it again.";
+    return `<div class="spot-top"><span class="pill test">Test done</span><span class="meta">${learned} of 28 learned</span></div>
+      <div class="testcard"><p class="score">${LT.right} of ${total}</p><p class="meta" style="margin:0 0 6px">right</p>
+      ${LT.missed.length ? `<div class="tiles missed">${LT.missed.map(L => `<button class="tile" data-miss="${L.i}"><span class="g">${L.ch}</span><small>${L.name}</small></button>`).join("")}</div>` : ""}
+      <p class="hint">${msg}</p></div>
+      <div class="actions"><button class="btn primary" id="backL">Keep learning</button><button class="btn" id="againL">Test again</button></div>`;
+  }
   const t = LT.target, a = LT.answered;
   let fb = "";
   if (a) fb = a === t ? `<p class="feedback ok">Right. That's ${t.name}.</p>` : `<p class="feedback no">That was ${t.name}. You tapped ${a.name}.</p>`;
-  return `<div class="spot-top"><span class="pill test">Test me</span><span class="meta">${LT.right} of ${LT.n} right</span></div>
+  const done = LT.idx + (a ? 1 : 0);
+  return `<div class="spot-top"><span class="pill test">Short test</span><span class="meta">${LT.idx + 1} of ${total}</span></div>
+    <div class="qbar"><span style="width:${(done / total * 100).toFixed(0)}%"></span></div>
     <div class="testcard"><button class="bigplay" id="replayL" aria-label="Play the sound again">${I.speak}</button>
     <p class="q">${a ? "" : "Which letter is this?"}</p><p class="meta" style="margin:0">${a ? "" : "Tap it in the grid."}</p>${fb}</div>
-    <div class="actions">${a ? `<button class="btn primary" id="nextL">Next</button>` : ""}<button class="btn" id="doneL">Done</button></div>`;
+    <div class="actions">${a && a !== t ? `<button class="btn primary" id="nextL">${LT.idx + 1 < total ? "Next" : "See score"}</button>` : ""}<button class="btn" id="stopL">Stop test</button></div>`;
 }
 
 function wireSpot() {
@@ -237,9 +266,12 @@ function wireSpot() {
   document.querySelectorAll(".tile.vowel").forEach(b => b.onclick = () => { speak(b.dataset.say); pulse(b); });
   if ($("exL")) $("exL").onclick = () => { const ex = letterExample(LETTERS[S.ui.letter].ch); play(ex.audio, null, true); pulse($("exL")); };
   if ($("testL")) $("testL").onclick = startLetterTest;
-  if ($("replayL")) $("replayL").onclick = () => { play(LT.target.audio); pulse($("replayL")); };
+  if ($("replayL")) $("replayL").onclick = () => { if (LT.target) play(LT.target.audio); pulse($("replayL")); };
   if ($("nextL")) $("nextL").onclick = nextLetterQ;
-  if ($("doneL")) $("doneL").onclick = () => { LT = null; renderLetters(); };
+  if ($("stopL")) $("stopL").onclick = endLetterTest;
+  if ($("backL")) $("backL").onclick = endLetterTest;
+  if ($("againL")) $("againL").onclick = startLetterTest;
+  document.querySelectorAll("[data-miss]").forEach(b => b.onclick = () => sayLetter(LETTERS[+b.dataset.miss], b));
   const spot = $("spot");
   if (spot && !LT && S.ui.view === "letters") {
     let x0 = null, y0 = null;

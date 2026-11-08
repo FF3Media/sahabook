@@ -323,3 +323,33 @@ textarea.backup { width: 100%; min-height: 90px; border-radius: 12px; border: 0;
 .nhero .ar { font-family: var(--font-quran); font-size: calc(46px * var(--ar-scale)); }
 .section-title + .stages { margin-top: 0; }
 @media (max-width: 600px) { .ngrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } .ntile { min-height: 92px; } }
+
+/* Lessons 5–11 */
+.lessonseg button { min-width: 44px; justify-content: center; }
+.xgrid { direction: rtl; display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 10px; }
+.xgrid.words { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.xtile { position: relative; border: 0; border-radius: 16px; background: var(--elevated); padding: 18px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 96px; }
+.xtile .g { font-family: var(--font-letter); font-size: calc(24px * var(--ar-scale)); line-height: 1.7; word-spacing: .25em; }
+.xtile .g.w { font-family: var(--font-quran); font-size: calc(26px * var(--ar-scale)); line-height: 1.9; position: relative; top: -.15em; }
+.xtile small { direction: ltr; font-size: 11.5px; color: var(--muted); }
+.xtile.learned .g { color: var(--accent); }
+.xtile.learning { box-shadow: 0 0 0 1.5px var(--accent); }
+.xtile.new { background: transparent; box-shadow: inset 0 0 0 1px var(--hair); }
+.xtile.selected, .xtile.target { box-shadow: 0 0 0 2.5px var(--accent), var(--shadow); }
+.xtile .dot { position: absolute; top: 7px; right: 7px; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
+.xtile .dot svg { width: 10px; height: 10px; }
+.xtile .pips { position: absolute; top: 8px; right: 8px; display: flex; gap: 3px; }
+.xtile .pips i { width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--accent); }
+.xtile .pips i.on { background: var(--accent); }
+.testing .xtile small { visibility: hidden; }
+.vrow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; direction: rtl; margin: 6px 0 4px; }
+.vbtn { border: 0; background: var(--elevated); border-radius: 16px; padding: 8px 4px 10px; display: flex; flex-direction: column; align-items: center; }
+.vbtn .g { font-family: var(--font-letter); font-size: calc(46px * var(--ar-scale)); line-height: 1.6; }
+.vbtn small { font-family: var(--font-mono); color: var(--muted); font-size: 13px; }
+.xchoices { grid-template-columns: repeat(3, 1fr); direction: rtl; }
+.xchoices .choice { display: flex; flex-direction: column; align-items: center; padding: 6px 4px; }
+.cg { font-family: var(--font-letter); font-size: calc(34px * var(--ar-scale)); line-height: 1.6; }
+.cw { font-family: var(--font-quran); font-size: calc(26px * var(--ar-scale)); line-height: 1.9; }
+.xchoices .choice small { font-size: 11.5px; color: inherit; opacity: .7; }
+.formshow { font-family: var(--font-letter); font-size: calc(84px * var(--ar-scale)); line-height: 1.5; text-align: center; }
+@media (max-width: 600px) { .xgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } .xgrid.words { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

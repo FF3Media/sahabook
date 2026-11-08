@@ -1,0 +1,900 @@
+{
+"names": [
+{
+"n": 1,
+"ar": "الرَّحْمَنُ",
+"tr": "Ar-Rahman",
+"en": "The Most Gracious",
+"audio": "audio/n/01.m4a",
+"ref": "1:1",
+"uses": 45
+},
+{
+"n": 2,
+"ar": "الرَّحِيمُ",
+"tr": "Ar-Rahim",
+"en": "The Most Merciful",
+"audio": "audio/n/02.m4a",
+"ref": "1:1",
+"uses": 34
+},
+{
+"n": 3,
+"ar": "الْمَلِكُ",
+"tr": "Al-Malik",
+"en": "The King",
+"audio": "audio/n/03.m4a",
+"ref": "59:23",
+"uses": 9
+},
+{
+"n": 4,
+"ar": "الْقُدُّوسُ",
+"tr": "Al-Quddus",
+"en": "The Most Holy",
+"audio": "audio/n/04.m4a",
+"ref": "59:23",
+"uses": 2
+},
+{
+"n": 5,
+"ar": "السَّلاَمُ",
+"tr": "As-Salam",
+"en": "The Source of Peace",
+"audio": "audio/n/05.m4a",
+"ref": "59:23",
+"uses": 5
+},
+{
+"n": 6,
+"ar": "الْمُؤْمِنُ",
+"tr": "Al-Mu'min",
+"en": "The Giver of Security",
+"audio": "audio/n/06.m4a",
+"ref": "59:23",
+"uses": 1
+},
+{
+"n": 7,
+"ar": "الْمُهَيْمِنُ",
+"tr": "Al-Muhaymin",
+"en": "The Guardian",
+"audio": "audio/n/07.m4a",
+"ref": "59:23",
+"uses": 1
+},
+{
+"n": 8,
+"ar": "الْعَزِيزُ",
+"tr": "Al-Aziz",
+"en": "The Almighty",
+"audio": "audio/n/08.m4a",
+"ref": "59:23",
+"uses": 64
+},
+{
+"n": 9,
+"ar": "الْجَبَّارُ",
+"tr": "Al-Jabbar",
+"en": "The Compeller",
+"audio": "audio/n/09.m4a",
+"ref": "59:23",
+"uses": 1
+},
+{
+"n": 10,
+"ar": "الْمُتَكَبِّرُ",
+"tr": "Al-Mutakabbir",
+"en": "The Supreme in Greatness",
+"audio": "audio/n/10.m4a",
+"ref": "59:23",
+"uses": 1
+},
+{
+"n": 11,
+"ar": "الْخَالِقُ",
+"tr": "Al-Khaliq",
+"en": "The Creator",
+"audio": "audio/n/11.m4a",
+"ref": "59:24",
+"uses": 1
+},
+{
+"n": 12,
+"ar": "الْبَارِئُ",
+"tr": "Al-Bari'",
+"en": "The Maker",
+"audio": "audio/n/12.m4a",
+"ref": "59:24",
+"uses": 1
+},
+{
+"n": 13,
+"ar": "الْمُصَوِّرُ",
+"tr": "Al-Musawwir",
+"en": "The Fashioner of Forms",
+"audio": "audio/n/13.m4a",
+"ref": "59:24",
+"uses": 1
+},
+{
+"n": 14,
+"ar": "الْغَفَّارُ",
+"tr": "Al-Ghaffar",
+"en": "The Ever-Forgiving",
+"audio": "audio/n/14.m4a",
+"ref": "38:66",
+"uses": 3
+},
+{
+"n": 15,
+"ar": "الْقَهَّارُ",
+"tr": "Al-Qahhar",
+"en": "The Subduer",
+"audio": "audio/n/15.m4a",
+"ref": "12:39",
+"uses": 6
+},
+{
+"n": 16,
+"ar": "الْوَهَّابُ",
+"tr": "Al-Wahhab",
+"en": "The Bestower",
+"audio": "audio/n/16.m4a",
+"ref": "3:8",
+"uses": 3
+},
+{
+"n": 17,
+"ar": "الرَّزَّاقُ",
+"tr": "Ar-Razzaq",
+"en": "The Provider",
+"audio": "audio/n/17.m4a",
+"ref": "51:58",
+"uses": 1
+},
+{
+"n": 18,
+"ar": "الْفَتَّاحُ",
+"tr": "Al-Fattah",
+"en": "The Opener",
+"audio": "audio/n/18.m4a",
+"ref": "34:26",
+"uses": 1
+},
+{
+"n": 19,
+"ar": "اَلْعَلِيْمُ",
+"tr": "Al-Alim",
+"en": "The All-Knowing",
+"audio": "audio/n/19.m4a",
+"ref": "2:32",
+"uses": 32
+},
+{
+"n": 20,
+"ar": "الْقَابِضُ",
+"tr": "Al-Qabid",
+"en": "The Withholder",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 21,
+"ar": "الْبَاسِطُ",
+"tr": "Al-Basit",
+"en": "The Extender",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 22,
+"ar": "الْخَافِضُ",
+"tr": "Al-Khafid",
+"en": "The Abaser",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 23,
+"ar": "الرَّافِعُ",
+"tr": "Ar-Rafi'",
+"en": "The Exalter",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 24,
+"ar": "الْمُعِزُّ",
+"tr": "Al-Mu'izz",
+"en": "The Giver of Honor",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 25,
+"ar": "المُذِلُّ",
+"tr": "Al-Mudhill",
+"en": "The Giver of Dishonor",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 26,
+"ar": "السَّمِيعُ",
+"tr": "As-Sami'",
+"en": "The All-Hearing",
+"audio": "audio/n/26.m4a",
+"ref": "2:127",
+"uses": 19
+},
+{
+"n": 27,
+"ar": "الْبَصِيرُ",
+"tr": "Al-Basir",
+"en": "The All-Seeing",
+"audio": "audio/n/27.m4a",
+"ref": "17:1",
+"uses": 4
+},
+{
+"n": 28,
+"ar": "الْحَكَمُ",
+"tr": "Al-Hakam",
+"en": "The Judge",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 29,
+"ar": "الْعَدْلُ",
+"tr": "Al-'Adl",
+"en": "The Just",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 30,
+"ar": "اللَّطِيفُ",
+"tr": "Al-Latif",
+"en": "The Subtle, the Kind",
+"audio": "audio/n/30.m4a",
+"ref": "6:103",
+"uses": 2
+},
+{
+"n": 31,
+"ar": "الْخَبِيرُ",
+"tr": "Al-Khabir",
+"en": "The All-Aware",
+"audio": "audio/n/31.m4a",
+"ref": "6:18",
+"uses": 6
+},
+{
+"n": 32,
+"ar": "الْحَلِيمُ",
+"tr": "Al-Halim",
+"en": "The Forbearing",
+"audio": "audio/n/32.m4a",
+"ref": "11:87",
+"uses": 1
+},
+{
+"n": 33,
+"ar": "الْعَظِيمُ",
+"tr": "Al-'Azim",
+"en": "The Magnificent",
+"audio": "audio/n/33.m4a",
+"ref": "2:105",
+"uses": 36
+},
+{
+"n": 34,
+"ar": "الْغَفُورُ",
+"tr": "Al-Ghafur",
+"en": "The All-Forgiving",
+"audio": "audio/n/34.m4a",
+"ref": "10:107",
+"uses": 11
+},
+{
+"n": 35,
+"ar": "الشَّكُورُ",
+"tr": "Ash-Shakur",
+"en": "The Appreciative",
+"audio": "audio/n/35.m4a",
+"ref": "34:13",
+"uses": 1
+},
+{
+"n": 36,
+"ar": "الْعَلِيُّ",
+"tr": "Al-'Aliyy",
+"en": "The Most High",
+"audio": "audio/n/36.m4a",
+"ref": "2:255",
+"uses": 8
+},
+{
+"n": 37,
+"ar": "الْكَبِيرُ",
+"tr": "Al-Kabir",
+"en": "The Most Great",
+"audio": "audio/n/37.m4a",
+"ref": "13:9",
+"uses": 8
+},
+{
+"n": 38,
+"ar": "الْحَفِيظُ",
+"tr": "Al-Hafiz",
+"en": "The Preserver",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 39,
+"ar": "المُقيِت",
+"tr": "Al-Muqit",
+"en": "The Sustainer",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 40,
+"ar": "الْحسِيبُ",
+"tr": "Al-Hasib",
+"en": "The Reckoner",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 41,
+"ar": "الْجَلِيلُ",
+"tr": "Al-Jalil",
+"en": "The Majestic",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 42,
+"ar": "الْكَرِيمُ",
+"tr": "Al-Karim",
+"en": "The Most Generous",
+"audio": "audio/n/42.m4a",
+"ref": "23:116",
+"uses": 3
+},
+{
+"n": 43,
+"ar": "الرَّقِيبُ",
+"tr": "Ar-Raqib",
+"en": "The Watchful",
+"audio": "audio/n/43.m4a",
+"ref": "5:117",
+"uses": 1
+},
+{
+"n": 44,
+"ar": "الْمُجِيبُ",
+"tr": "Al-Mujib",
+"en": "The Responsive",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 45,
+"ar": "الْوَاسِعُ",
+"tr": "Al-Wasi'",
+"en": "The All-Encompassing",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 46,
+"ar": "الْحَكِيمُ",
+"tr": "Al-Hakim",
+"en": "The All-Wise",
+"audio": "audio/n/46.m4a",
+"ref": "2:32",
+"uses": 42
+},
+{
+"n": 47,
+"ar": "الْوَدُودُ",
+"tr": "Al-Wadud",
+"en": "The Loving",
+"audio": "audio/n/47.m4a",
+"ref": "85:14",
+"uses": 1
+},
+{
+"n": 48,
+"ar": "الْمَجِيدُ",
+"tr": "Al-Majid",
+"en": "The Most Glorious",
+"audio": "audio/n/48.m4a",
+"ref": "50:1",
+"uses": 2
+},
+{
+"n": 49,
+"ar": "الْبَاعِثُ",
+"tr": "Al-Ba'ith",
+"en": "The Resurrector",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 50,
+"ar": "الشَّهِيدُ",
+"tr": "Ash-Shahid",
+"en": "The Witness",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 51,
+"ar": "الْحَقُّ",
+"tr": "Al-Haqq",
+"en": "The Truth",
+"audio": "audio/n/51.m4a",
+"ref": "2:26",
+"uses": 109
+},
+{
+"n": 52,
+"ar": "الْوَكِيلُ",
+"tr": "Al-Wakil",
+"en": "The Trustee",
+"audio": "audio/n/52.m4a",
+"ref": "3:173",
+"uses": 1
+},
+{
+"n": 53,
+"ar": "الْقَوِيُّ",
+"tr": "Al-Qawiyy",
+"en": "The All-Strong",
+"audio": "audio/n/53.m4a",
+"ref": "11:66",
+"uses": 4
+},
+{
+"n": 54,
+"ar": "الْمَتِينُ",
+"tr": "Al-Matin",
+"en": "The Firm",
+"audio": "audio/n/54.m4a",
+"ref": "51:58",
+"uses": 1
+},
+{
+"n": 55,
+"ar": "الْوَلِيُّ",
+"tr": "Al-Waliyy",
+"en": "The Protecting Friend",
+"audio": "audio/n/55.m4a",
+"ref": "42:9",
+"uses": 2
+},
+{
+"n": 56,
+"ar": "الْحَمِيدُ",
+"tr": "Al-Hamid",
+"en": "The Praiseworthy",
+"audio": "audio/n/56.m4a",
+"ref": "14:1",
+"uses": 10
+},
+{
+"n": 57,
+"ar": "الْمُحْصِي",
+"tr": "Al-Muhsi",
+"en": "The Accounter",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 58,
+"ar": "الْمُبْدِئُ",
+"tr": "Al-Mubdi'",
+"en": "The Originator",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 59,
+"ar": "الْمُعِيدُ",
+"tr": "Al-Mu'id",
+"en": "The Restorer",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 60,
+"ar": "الْمُحْيِي",
+"tr": "Al-Muhyi",
+"en": "The Giver of Life",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 61,
+"ar": "اَلْمُمِيتُ",
+"tr": "Al-Mumit",
+"en": "The Bringer of Death",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 62,
+"ar": "الْحَيُّ",
+"tr": "Al-Hayy",
+"en": "The Ever-Living",
+"audio": "audio/n/62.m4a",
+"ref": "2:255",
+"uses": 12
+},
+{
+"n": 63,
+"ar": "الْقَيُّومُ",
+"tr": "Al-Qayyum",
+"en": "The Self-Sustaining",
+"audio": "audio/n/63.m4a",
+"ref": "2:255",
+"uses": 3
+},
+{
+"n": 64,
+"ar": "الْوَاجِدُ",
+"tr": "Al-Wajid",
+"en": "The Finder",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 65,
+"ar": "الْمَاجِدُ",
+"tr": "Al-Majid",
+"en": "The Noble",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 66,
+"ar": "الْواحِدُ",
+"tr": "Al-Wahid",
+"en": "The One",
+"audio": "audio/n/66.m4a",
+"ref": "12:39",
+"uses": 6
+},
+{
+"n": 67,
+"ar": "اَلاَحَدُ",
+"tr": "Al-Ahad",
+"en": "The Unique",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 68,
+"ar": "الصَّمَدُ",
+"tr": "As-Samad",
+"en": "The Eternal Refuge",
+"audio": "audio/n/68.m4a",
+"ref": "112:2",
+"uses": 1
+},
+{
+"n": 69,
+"ar": "الْقَادِرُ",
+"tr": "Al-Qadir",
+"en": "The All-Capable",
+"audio": "audio/n/69.m4a",
+"ref": "6:65",
+"uses": 1
+},
+{
+"n": 70,
+"ar": "الْمُقْتَدِرُ",
+"tr": "Al-Muqtadir",
+"en": "The All-Powerful",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 71,
+"ar": "الْمُقَدِّمُ",
+"tr": "Al-Muqaddim",
+"en": "The Expediter",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 72,
+"ar": "الْمُؤَخِّرُ",
+"tr": "Al-Mu'akhkhir",
+"en": "The Delayer",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 73,
+"ar": "الأوَّلُ",
+"tr": "Al-Awwal",
+"en": "The First",
+"audio": "audio/n/73.m4a",
+"ref": "50:15",
+"uses": 2
+},
+{
+"n": 74,
+"ar": "الآخِرُ",
+"tr": "Al-Akhir",
+"en": "The Last",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 75,
+"ar": "الظَّاهِرُ",
+"tr": "Az-Zahir",
+"en": "The Manifest",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 76,
+"ar": "الْبَاطِنُ",
+"tr": "Al-Batin",
+"en": "The Hidden",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 77,
+"ar": "الْوَالِي",
+"tr": "Al-Wali",
+"en": "The Governor",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 78,
+"ar": "الْمُتَعَالِي",
+"tr": "Al-Muta'ali",
+"en": "The Most Exalted",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 79,
+"ar": "الْبَرُّ",
+"tr": "Al-Barr",
+"en": "The Source of Goodness",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 80,
+"ar": "التَّوَابُ",
+"tr": "At-Tawwab",
+"en": "The Accepter of Repentance",
+"audio": "audio/n/80.m4a",
+"ref": "2:37",
+"uses": 6
+},
+{
+"n": 81,
+"ar": "الْمُنْتَقِمُ",
+"tr": "Al-Muntaqim",
+"en": "The Avenger",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 82,
+"ar": "العَفُوُّ",
+"tr": "Al-'Afuww",
+"en": "The Pardoner",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 83,
+"ar": "الرَّؤُوفُ",
+"tr": "Ar-Ra'uf",
+"en": "The Most Kind",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 84,
+"ar": "مَالِكُ الْمُلْكِ",
+"tr": "Malik al-Mulk",
+"en": "Owner of All Sovereignty",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 85,
+"ar": "ذُوالْجَلاَلِ وَالإكْرَامِ",
+"tr": "Dhul-Jalali wal-Ikram",
+"en": "Lord of Majesty and Honor",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 86,
+"ar": "الْمُقْسِطُ",
+"tr": "Al-Muqsit",
+"en": "The Equitable",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 87,
+"ar": "الْجَامِعُ",
+"tr": "Al-Jami'",
+"en": "The Gatherer",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 88,
+"ar": "الْغَنِيُّ",
+"tr": "Al-Ghaniyy",
+"en": "The Self-Sufficient",
+"audio": "audio/n/88.m4a",
+"ref": "6:133",
+"uses": 8
+},
+{
+"n": 89,
+"ar": "الْمُغْنِي",
+"tr": "Al-Mughni",
+"en": "The Enricher",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 90,
+"ar": "اَلْمَانِعُ",
+"tr": "Al-Mani'",
+"en": "The Preventer",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 91,
+"ar": "الضَّارَّ",
+"tr": "Ad-Darr",
+"en": "The Bringer of Harm",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 92,
+"ar": "النَّافِعُ",
+"tr": "An-Nafi'",
+"en": "The Bringer of Benefit",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 93,
+"ar": "النُّورُ",
+"tr": "An-Nur",
+"en": "The Light",
+"audio": "audio/n/93.m4a",
+"ref": "2:257",
+"uses": 10
+},
+{
+"n": 94,
+"ar": "الْهَادِي",
+"tr": "Al-Hadi",
+"en": "The Guide",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 95,
+"ar": "الْبَدِيعُ",
+"tr": "Al-Badi'",
+"en": "The Incomparable Originator",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 96,
+"ar": "اَلْبَاقِي",
+"tr": "Al-Baqi",
+"en": "The Everlasting",
+"audio": null,
+"ref": null,
+"uses": 0
+},
+{
+"n": 97,
+"ar": "الْوَارِثُ",
+"tr": "Al-Warith",
+"en": "The Inheritor",
+"audio": "audio/n/97.m4a",
+"ref": "2:233",
+"uses": 1
+},
+{
+"n": 98,
+"ar": "الرَّشِيدُ",
+"tr": "Ar-Rashid",
+"en": "The Guide to the Right Path",
+"audio": "audio/n/98.m4a",
+"ref": "11:87",
+"uses": 1
+},
+{
+"n": 99,
+"ar": "الصَّبُورُ",
+"tr": "As-Sabur",
+"en": "The Most Patient",
+"audio": null,
+"ref": null,
+"uses": 0
+}
+],
+"sources": {
+"list": "Traditional list (Tirmidhi) via api.aladhan.com",
+"audio": "Quran.com word-by-word recitation",
+"meanings": "Sahabook"
+}
+}

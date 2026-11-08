@@ -59,7 +59,7 @@ const KEY = "qwr-v1";
 const today = () => new Date().toLocaleDateString("en-CA");
 const addDays = (d, n) => { const t = new Date(d + "T12:00:00"); t.setDate(t.getDate() + n); return t.toLocaleDateString("en-CA"); };
 const INTERVALS = [0, 1, 3, 7, 14, 30];
-function fresh() { return { letters: {}, words: {}, days: [], settings: { size: 1, speed: 1, gloss: "off" }, ui: { view: "home", letter: null, surah: null } }; }
+function fresh() { return { letters: {}, words: {}, names: {}, days: [], settings: { size: 1, speed: 1, gloss: "off" }, ui: { view: "home", letter: null, surah: null, name: 0 } }; }
 let S = fresh();
 function load() {
   try { const raw = localStorage.getItem(KEY); if (raw) { const s = JSON.parse(raw); S = Object.assign(fresh(), s); S.settings = Object.assign(fresh().settings, s.settings || {}); S.ui = Object.assign(fresh().ui, s.ui || {}); } } catch (e) {}
@@ -468,6 +468,104 @@ function playVerse(s, v, times) {
 }
 function openSurah(n) { S.ui.surah = n; selWord = null; RT = null; save(); renderRead(); window.scrollTo(0, 0); }
 
+// ---------- 99 Names ----------
+let N = null;        // names data
+let NT = null;       // names quiz
+const NAME_GROUP = 7;
+function nameRec(x) { return S.names[x.n]; }
+function nameLearned(x) { const r = nameRec(x); return !!(r && r.days && r.days.length >= 2); }
+function nameGroup() { return N.filter(x => !nameLearned(x)).slice(0, NAME_GROUP); }
+function nameState(x) { if (nameLearned(x)) return "learned"; return nameGroup().includes(x) ? "learning" : "new"; }
+function sayName(x, el) { if (x.audio) play(x.audio, null, true); else speak(x.ar); pulse(el); }
+function startNameQuiz() {
+  const t = today();
+  const due = shuffle(N.filter(x => nameLearned(x) && (nameRec(x).next || t) <= t)).slice(0, 3);
+  let q = [...nameGroup().filter(x => !(nameRec(x) && nameRec(x).days && nameRec(x).days.includes(t))), ...due];
+  if (!q.length) q = nameGroup().length ? nameGroup() : shuffle(N).slice(0, NAME_GROUP);
+  NT = { queue: shuffle(q), idx: 0, right: 0, missed: [], finished: false };
+  askName();
+}
+function askName() {
+  clearTimeout(autoNext);
+  if (NT.idx >= NT.queue.length) { NT.finished = true; NT.target = null; renderNames(); return; }
+  const t = NT.queue[NT.idx];
+  const others = shuffle(N.filter(x => x !== t)).slice(0, 2).map(x => x.en);
+  NT.target = t; NT.answered = null; NT.choices = shuffle([t.en, ...others]);
+  renderNames(); sayName(t);
+}
+function answerName(c) {
+  if (!NT || NT.answered || NT.finished) return;
+  const ok = c === NT.target.en; NT.answered = c; if (ok) NT.right++; else NT.missed.push(NT.target);
+  record(S.names, NT.target.n, ok);
+  renderNames();
+  if (ok) autoNext = setTimeout(() => { NT.idx++; askName(); }, 900);
+}
+function renderNames() {
+  const learned = N.filter(nameLearned).length;
+  const sel = N[S.ui.name] || N[0];
+  let h = `<div class="head"><div><p class="eyebrow">Al-Asma ul-Husna</p><h1 class="title">The 99 Names of Allah</h1><p class="sub nextstep">Tap any name to hear it. Outlined names are the next ${NAME_GROUP} to learn.</p></div>
+    <div class="counter" role="group" aria-label="Names learned">
+      <button class="cbtn" id="lessN" aria-label="One fewer name learned" ${learned ? "" : "disabled"}>${I.left}</button>
+      <div class="cval"><b>${learned} of 99</b><span>names learned</span></div>
+      <button class="cbtn" id="moreN" aria-label="One more name learned" ${learned < 99 ? "" : "disabled"}>${I.right}</button></div></div>`;
+  h += `<div class="split letters"><aside class="spot" id="spot">${NT ? nameQuizCard() : nameCard(sel)}</aside><div><div class="ngrid ${NT ? "testing" : ""}">` + N.map((x, i) => {
+    const st = nameState(x);
+    let cls = "ntile " + st;
+    if (!NT && x === sel) cls += " selected";
+    if (NT && NT.target === x) cls += " target";
+    return `<button class="${cls}" data-n="${i}" aria-label="${x.tr}"><span class="num">${x.n}</span>${st === "learned" ? `<span class="dot">${I.check}</span>` : ""}<span class="ar">${x.ar}</span><small>${x.tr}</small></button>`;
+  }).join("") + `</div></div></div>`;
+  main().innerHTML = h;
+  const $ = id => document.getElementById(id);
+  document.querySelectorAll("[data-n]").forEach(b => b.onclick = () => {
+    const x = N[+b.dataset.n];
+    if (NT && !NT.finished) { sayName(x, b); return; }
+    NT = null; S.ui.name = +b.dataset.n; save(); renderNames(); sayName(x, document.querySelector(`[data-n="${b.dataset.n}"]`));
+  });
+  const stepN = more => {
+    if (more) { const x = N.find(y => !nameLearned(y)); if (!x) return; S.names[x.n] = { days: [addDays(today(), -1), today()], box: 2, seen: true, next: addDays(today(), 3) }; practiced(); }
+    else { const x = [...N].reverse().find(nameLearned); if (!x) return; delete S.names[x.n]; }
+    save(); renderNames();
+  };
+  $("moreN").onclick = () => stepN(true); $("lessN").onclick = () => stepN(false);
+  document.querySelectorAll("[data-nstep]").forEach(b => b.onclick = () => { S.ui.name = (S.ui.name + +b.dataset.nstep + 99) % 99; save(); renderNames(); sayName(N[S.ui.name]); });
+  if ($("heroN")) $("heroN").onclick = () => sayName(N[S.ui.name], $("heroN"));
+  if ($("quizN")) $("quizN").onclick = startNameQuiz;
+  if ($("replayN")) $("replayN").onclick = () => { if (NT.target) sayName(NT.target, $("replayN")); };
+  document.querySelectorAll("[data-nc]").forEach(b => b.onclick = () => answerName(b.dataset.nc));
+  if ($("nextN")) $("nextN").onclick = () => { NT.idx++; askName(); };
+  if ($("stopN")) $("stopN").onclick = () => { clearTimeout(autoNext); NT = null; renderNames(); };
+  if ($("againN")) $("againN").onclick = startNameQuiz;
+  document.querySelectorAll("[data-nmiss]").forEach(b => b.onclick = () => sayName(N[+b.dataset.nmiss], b));
+}
+function nameCard(x) {
+  const st = nameState(x);
+  let h = `<div class="spot-top"><button class="navbtn" data-nstep="-1" aria-label="Previous name">${I.left}</button><span class="pill ${st === "learned" ? "known" : st}">${{ learned: "Learned", learning: "Learning now", new: "Coming up" }[st]} · ${x.n} of 99</span><button class="navbtn" data-nstep="1" aria-label="Next name">${I.right}</button></div>`;
+  h += `<button class="whero nhero" id="heroN" aria-label="Hear ${x.tr}"><span class="ar">${x.ar}</span><span class="tr">${x.tr}<span class="spk">${I.speak}</span></span></button>`;
+  h += `<div class="meaning" style="text-align:center">${x.en}</div>`;
+  h += `<p class="hint" style="text-align:center">${x.ref ? `Recited as in the Quran, ${x.ref}.` : "Played with your device's voice for now."}</p>`;
+  const g = nameGroup().length;
+  h += `<p class="meta quizhint">Studied the outlined names? Take a 1-minute quiz.</p><div class="actions"><button class="btn primary" id="quizN">${g ? `Quiz me on these ${g}` : "Practice quiz"}</button></div>`;
+  return h;
+}
+function nameQuizCard() {
+  const total = NT.queue.length;
+  if (NT.finished) {
+    return `<div class="spot-top"><span class="pill test">Quiz done</span><span class="meta">${N.filter(nameLearned).length} of 99 learned</span></div>
+      <div class="testcard"><p class="score">${NT.right} of ${total}</p><p class="meta" style="margin:0 0 6px">right</p>
+      ${NT.missed.length ? `<div class="tiles missed">${NT.missed.map(x => `<button class="tile" data-nmiss="${N.indexOf(x)}"><span class="g" style="font-family:var(--font-quran);font-size:22px">${x.ar}</span><small>${x.en}</small></button>`).join("")}</div>` : ""}
+      <p class="hint">${NT.missed.length ? "Tap a name you missed to hear it again. " : ""}Pass each name on two different days to learn it.</p></div>
+      <div class="actions"><button class="btn primary" id="stopN">Keep learning</button><button class="btn" id="againN">Quiz again</button></div>`;
+  }
+  const t = NT.target, a = NT.answered;
+  const done = NT.idx + (a ? 1 : 0);
+  return `<div class="spot-top"><span class="pill test">Quiz</span><span class="meta">${NT.idx + 1} of ${total}</span></div>
+    <div class="qbar"><span style="width:${(done / total * 100).toFixed(0)}%"></span></div>
+    <div class="testcard"><button class="whero nhero" id="replayN" aria-label="Hear it again"><span class="ar">${t.ar}</span><span class="tr">${a ? t.tr : "Tap to hear it again"}<span class="spk">${I.speak}</span></span></button><p class="q">${a ? "" : "What does it mean?"}</p></div>
+    <div class="choices">${NT.choices.map(c => `<button class="choice ${a ? (c === t.en ? "right" : c === a ? "wrong" : "") : ""}" data-nc="${c.replace(/"/g, "&quot;")}">${c}</button>`).join("")}</div>
+    <div class="actions">${a && a !== t.en ? `<button class="btn primary" id="nextN">${NT.idx + 1 < total ? "Next" : "See score"}</button>` : ""}<button class="btn" id="stopN">Stop quiz</button></div>`;
+}
+
 // ---------- Progress ----------
 function renderProgress() {
   const learned = LETTERS.filter(letterLearned).length;
@@ -476,7 +574,7 @@ function renderProgress() {
   const week = Array.from({ length: 7 }, (_, i) => addDays(today(), i - dow));
   const thisWeek = week.filter(x => S.days.includes(x)).length;
   let h = `<div class="head"><div><p class="eyebrow">Your progress</p><h1 class="title">Progress</h1></div></div>
-    <div class="stats"><div class="stat"><b>${learned} of 28</b><span>letters learned</span></div><div class="stat"><b>${ks.known} of ${ks.total}</b><span>words known</span></div>
+    <div class="stats"><div class="stat"><b>${learned} of 28</b><span>letters learned</span></div><div class="stat"><b>${ks.known} of ${ks.total}</b><span>words known</span></div><div class="stat"><b>${N.filter(nameLearned).length} of 99</b><span>names learned</span></div>
     <div class="stat"><b>${thisWeek} of 7</b><span>days practiced this week</span><div class="week">${week.map(x => `<i class="${S.days.includes(x) ? "on" : ""}"></i>`).join("")}</div></div></div>`;
   h += `<h2 class="section-title">What you can read</h2>` + surahRows();
   h += `<h2 class="section-title">Settings</h2><div class="settings">
@@ -528,6 +626,8 @@ function renderHome() {
     ${st.frac != null ? `<div class="qbar"><span style="width:${(st.frac * 100).toFixed(0)}%"></span></div>` : ""}<p class="meta">${st.stat}</p>
     ${st.n === current ? `<button class="btn primary" data-go="${st.view}">Continue</button>` : ""}</div>`).join("");
   h += `</div>`;
+  const nl = N.filter(nameLearned).length;
+  h += `<h2 class="section-title">Also</h2><div class="stages"><div class="stage" data-go="names" role="button" tabindex="0"><p class="snum">Any time</p><h2>The 99 Names of Allah</h2><p class="sdesc">Hear each name, learn what it means.</p><div class="qbar"><span style="width:${(nl / 99 * 100).toFixed(0)}%"></span></div><p class="meta">${nl} of 99 names learned</p></div></div>`;
   main().innerHTML = h;
   document.querySelectorAll(".stage[data-go]").forEach(el => {
     const go = () => { S.ui.view = el.dataset.go; LT = null; save(); render(); window.scrollTo(0, 0); };
@@ -536,13 +636,13 @@ function renderHome() {
 }
 function render() {
   syncTabs();
-  if (S.ui.view === "read") renderRead(); else if (S.ui.view === "progress") renderProgress(); else if (S.ui.view === "letters") renderLetters(); else renderHome();
+  if (S.ui.view === "read") renderRead(); else if (S.ui.view === "progress") renderProgress(); else if (S.ui.view === "letters") renderLetters(); else if (S.ui.view === "names") renderNames(); else renderHome();
 }
 document.querySelector(".brand").onclick = () => { S.ui.view = "home"; LT = null; RT = null; save(); render(); window.scrollTo(0, 0); };
 document.querySelectorAll("[role=tab][data-view]").forEach(t => t.onclick = () => {
   if (t.getAttribute("aria-disabled") === "true") return;
   if (S.ui.view === t.dataset.view && t.dataset.view === "read") { S.ui.surah = null; RT = null; }
-  S.ui.view = t.dataset.view; LT = null; save(); render(); window.scrollTo(0, 0);
+  S.ui.view = t.dataset.view; LT = null; NT = null; save(); render(); window.scrollTo(0, 0);
 });
 let lastWide = matchMedia("(min-width: 961px)").matches;
 window.addEventListener("resize", () => { const w = matchMedia("(min-width: 961px)").matches; if (w !== lastWide) { lastWide = w; render(); } });
@@ -550,7 +650,7 @@ window.addEventListener("resize", () => { const w = matchMedia("(min-width: 961p
 (async function boot() {
   load(); S.ui.view = "home"; applySettings();
   try {
-    C = await (await fetch("data/content.json")).json();
+    [C, N] = await Promise.all([fetch("data/content.json").then(r => r.json()), fetch("data/names.json").then(r => r.json()).then(d => d.names)]);
   } catch (e) {
     main().innerHTML = `<p class="empty">Couldn't load the Quran text. Check your connection and reload.</p>`; return;
   }

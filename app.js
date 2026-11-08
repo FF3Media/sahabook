@@ -142,7 +142,24 @@ function letterExample(ch) {
 // ---------- Letters: status and Test me ----------
 function letterRec(L) { return S.letters[L.ch]; }
 function letterLearned(L) { const r = letterRec(L); return !!(r && r.days && r.days.length >= 2); }
-function currentGroup() { return LETTERS.filter(L => !letterLearned(L)).slice(0, GROUP_SIZE); }
+// Letters are learned in 4 fixed sets of 7. The current set is the first one with a letter not yet learned.
+const SETS = Math.ceil(LETTERS.length / GROUP_SIZE);
+function setOf(L) { return Math.floor(L.i / GROUP_SIZE); }
+function currentSetIndex() { const L = LETTERS.find(x => !letterLearned(x)); return L ? setOf(L) : SETS; }
+function currentGroup() { const k = currentSetIndex(); return LETTERS.filter(L => setOf(L) === k && !letterLearned(L)); }
+function passedOn(L, d) { const r = letterRec(L); return !!(r && r.days && r.days.includes(d)); }
+function dayDots(L) { const r = letterRec(L); return Math.min(2, r && r.days ? r.days.length : 0); }
+function needToday() { const t = today(); return currentGroup().filter(L => !passedOn(L, t)); }
+function nextStep() {
+  const k = currentSetIndex();
+  if (k >= SETS) return "All 28 letters learned. On to reading.";
+  const set = `Set ${k + 1} of ${SETS}.`;
+  const need = needToday(), group = currentGroup();
+  if (!need.length) return `${set} Done for today. Pass the quiz again tomorrow to finish this set.`;
+  if (group.every(L => !dayDots(L))) return `${set} Today: study the ${group.length} outlined letters, then take the quiz.`;
+  if (need.length === group.length && group.every(L => dayDots(L))) return `${set} Today: pass the quiz again to finish this set.`;
+  return `${set} Today: pass the quiz on ${need.length} more letter${need.length === 1 ? "" : "s"}.`;
+}
 function letterState(L) { if (letterLearned(L)) return "learned"; return currentGroup().includes(L) ? "learning" : "new"; }
 function sayLetter(L, el) { play(L.audio); pulse(el); }
 function forms(ch) {
@@ -166,14 +183,14 @@ function pickLetterTarget() {
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 function buildLetterQuiz() {
   const t = today();
-  const group = currentGroup();
+  const group = needToday().length ? needToday() : currentGroup();
   const due = shuffle(LETTERS.filter(L => letterLearned(L) && (letterRec(L).next || t) <= t)).slice(0, 3);
   let q = [...group, ...due];
   if (!q.length) q = shuffle(LETTERS).slice(0, GROUP_SIZE);
   return shuffle(q);
 }
 let autoNext = null;
-function startLetterTest() { LT = { queue: buildLetterQuiz(), idx: 0, right: 0, missed: [], target: null, answered: null, finished: false }; askLetter(); }
+function startLetterTest() { LT = { setAtStart: currentSetIndex(), queue: buildLetterQuiz(), idx: 0, right: 0, missed: [], target: null, answered: null, finished: false }; askLetter(); }
 function askLetter() {
   clearTimeout(autoNext);
   if (LT.idx >= LT.queue.length) { LT.finished = true; LT.target = null; LT.answered = null; renderLetters(); return; }
@@ -201,7 +218,7 @@ function renderLetters() {
   const learned = LETTERS.filter(letterLearned).length;
   if (S.ui.letter == null || !LETTERS[S.ui.letter]) S.ui.letter = (currentGroup()[0] || LETTERS[0]).i;
   const sel = LETTERS[S.ui.letter];
-  let h = `<div class="head"><div><p class="eyebrow">Stage 1 · Letters</p><h1 class="title">The Arabic letters</h1><p class="sub">Tap any letter to hear it. When you've studied the outlined letters, take the quiz.</p></div>
+  let h = `<div class="head"><div><p class="eyebrow">Stage 1 · Letters</p><h1 class="title">The Arabic letters</h1><p class="sub nextstep">${nextStep()}</p></div>
     <div class="ring">${ringSvg("lr", learned / 28)}<div><b>${learned} of 28</b><span>letters learned</span></div></div></div>`;
   h += `<div class="split letters"><aside class="spot" id="spot">${LT ? letterTestCard() : letterCard(sel)}</aside>`;
   h += `<div><div class="lgrid ${LT ? "testing" : ""}" id="lgrid">` + LETTERS.map(L => {
@@ -209,8 +226,9 @@ function renderLetters() {
     let cls = "ltile " + st;
     if (!LT && L === sel) cls += " selected";
     if (LT && LT.answered) { if (L === LT.target) cls += " right"; else if (L === LT.answered) cls += " wrong"; }
-    return `<button class="${cls}" data-i="${L.i}" aria-label="${L.name}">${st === "learned" && !LT ? `<span class="dot">${I.check}</span>` : ""}<span class="g">${L.ch}</span><small>${L.name}</small></button>`;
-  }).join("") + `</div><p class="small" style="margin-top:14px">Green letters are learned: you've picked them out correctly in the quiz on two different days. Outlined letters are the ones you're learning now.</p></div></div>`;
+    const pips = st === "learning" && !LT ? `<span class="pips" aria-hidden="true"><i class="${dayDots(L) > 0 ? "on" : ""}"></i><i class="${dayDots(L) > 1 ? "on" : ""}"></i></span>` : "";
+    return `<button class="${cls}" data-i="${L.i}" aria-label="${L.name}">${st === "learned" && !LT ? `<span class="dot">${I.check}</span>` : ""}${pips}<span class="g">${L.ch}</span><small>${L.name}</small></button>`;
+  }).join("") + `</div><p class="small" style="margin-top:14px">Outlined letters are your current set. Each dot is a day you passed that letter in the quiz. Two dots and it turns green: learned. Learn all 7 and the next set unlocks.</p></div></div>`;
   main().innerHTML = h;
   document.querySelectorAll(".ltile").forEach(b => b.onclick = () => {
     const L = LETTERS[+b.dataset.i];
@@ -230,18 +248,21 @@ function letterCard(L) {
   if (L.ch !== "ا") h += `<span class="break"></span>` + [["َ", "a"], ["ِ", "i"], ["ُ", "u"]].map(v => `<button class="tile vowel" data-say="${L.ch + v[0]}"><span class="g">${L.ch + v[0]}</span><small>${L.tr + v[1]}</small></button>`).join("");
   h += `</div>`;
   if (ex) h += `<p class="subhead exlabel">In the Quran</p><button class="example" id="exL" aria-label="Hear ${ex.tr}"><span class="txt">${ex.en}<span>${ex.tr}</span></span><span class="ar">${ex.ar}</span></button>`;
-  h += `<p class="meta quizhint">Studied the outlined letters? Take a 1-minute quiz.</p><div class="actions"><button class="btn primary" id="testL">${currentGroup().length ? `Quiz me on these ${currentGroup().length}` : "Quiz me"}</button></div>`;
+  h += `<p class="meta quizhint">Studied the outlined letters? Take a 1-minute quiz.</p><div class="actions"><button class="btn primary" id="testL">${needToday().length ? `Quiz me on these ${needToday().length}` : "Practice quiz"}</button></div>`;
   return h;
 }
 function letterTestCard() {
   const total = LT.queue.length;
   if (LT.finished) {
     const learned = LETTERS.filter(letterLearned).length;
-    const msg = LT.right === total ? "All right. Come back tomorrow and pass again to lock these letters in." : "Tap a letter you missed to hear it again.";
+    const k = currentSetIndex();
+    const unlocked = k > LT.setAtStart;
+    const msg = unlocked ? (k >= SETS ? "All 28 letters learned." : `Set ${LT.setAtStart + 1} done. Set ${k + 1} unlocked.`)
+      : (LT.missed.length ? "Tap a letter you missed to hear it again. " : "") + nextStep().replace(/^Set \d+ of \d+\. /, "");
     return `<div class="spot-top"><span class="pill test">Quiz done</span><span class="meta">${learned} of 28 learned</span></div>
       <div class="testcard"><p class="score">${LT.right} of ${total}</p><p class="meta" style="margin:0 0 6px">right</p>
       ${LT.missed.length ? `<div class="tiles missed">${LT.missed.map(L => `<button class="tile" data-miss="${L.i}"><span class="g">${L.ch}</span><small>${L.name}</small></button>`).join("")}</div>` : ""}
-      <p class="hint">${msg}</p></div>
+      <p class="hint ${unlocked ? "unlocked" : ""}">${msg}</p></div>
       <div class="actions"><button class="btn primary" id="backL">Keep learning</button><button class="btn" id="againL">Quiz again</button></div>`;
   }
   const t = LT.target, a = LT.answered;
@@ -462,7 +483,7 @@ function renderHome() {
   const ks = knownShare(words());
   const current = learned < 28 ? 1 : 3; // stage 2 isn't built yet
   const stages = [
-    { n: 1, view: "letters", title: "Learn the letters", desc: "The 28 letters: their sounds and shapes.", stat: `${learned} of 28 letters learned`, frac: learned / 28 },
+    { n: 1, view: "letters", title: "Learn the letters", desc: "The 28 letters: their sounds and shapes.", stat: learned < 28 ? `Set ${currentSetIndex() + 1} of ${SETS} · ${learned} of 28 letters learned` : "All 28 letters learned", frac: learned / 28 },
     { n: 2, title: "Learn to read", desc: "Vowel marks, joining letters, and sounding out words from your surahs.", stat: learned < 28 ? "Unlocks after the letters" : "Coming soon", locked: true },
     { n: 3, view: "read", title: "Understand the surahs", desc: "Word meanings in Al-Fatiha and the last 15 surahs.", stat: `${ks.known} of ${ks.total} words known`, frac: ks.known / ks.total },
   ];

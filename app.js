@@ -223,7 +223,8 @@ function renderLetters() {
   if (S.ui.letter == null || !LETTERS[S.ui.letter]) S.ui.letter = (currentGroup()[0] || LETTERS[0]).i;
   const sel = LETTERS[S.ui.letter];
   let h = `<div class="head"><div><p class="eyebrow">Stage 1 · Letters</p><h1 class="title">The Arabic letters</h1><p class="sub nextstep">${nextStep()}</p></div>
-    <div class="ring">${ringSvg("lr", learned / 28)}<div><b>${learned} of 28</b><span>letters learned</span></div></div></div>`;
+    <div class="ring">${ringSvg("lr", learned / 28)}<div><b>${learned} of 28</b><span>letters learned</span></div>
+    <div class="stepper" role="group" aria-label="Set letters learned"><button id="lessL" aria-label="One fewer letter learned" ${learned ? "" : "disabled"}>−</button><button id="moreL" aria-label="One more letter learned" ${learned < 28 ? "" : "disabled"}>+</button></div></div></div>`;
   const vs = viewSet(), cs = currentSetIndex();
   h += `<div class="setbar"><div class="seg" role="group" aria-label="Letter sets">` + Array.from({ length: SETS }, (_, k) =>
     `<button data-set="${k}" aria-pressed="${k === vs}" ${LT ? "disabled" : ""}>Set ${k + 1}${setDone(k) ? ` <span class="ok">${I.check}</span>` : k === cs ? ` <span class="here"></span>` : ""}</button>`).join("") + `</div></div>`;
@@ -242,6 +243,14 @@ function renderLetters() {
     if (LT) { if (LT.target && !LT.answered) answerLetter(L); else sayLetter(L, b); return; }
     S.ui.letter = L.i; save(); renderLetters(); sayLetter(L, document.querySelector(`.ltile[data-i="${L.i}"]`));
   });
+  // − / + next to the count: mark letters learned or not, in alphabet order.
+  const stepTo = more => {
+    if (more) { const L = LETTERS.find(x => !letterLearned(x)); if (!L) return; S.letters[L.ch] = { days: [addDays(today(), -1), today()], box: 2, seen: true, next: addDays(today(), 3) }; practiced(); }
+    else { const L = [...LETTERS].reverse().find(letterLearned); if (!L) return; delete S.letters[L.ch]; }
+    S.ui.set = null; S.ui.letter = (currentGroup()[0] || LETTERS[S.ui.letter]).i; save(); renderLetters();
+  };
+  document.getElementById("moreL").onclick = () => stepTo(true);
+  document.getElementById("lessL").onclick = () => stepTo(false);
   document.querySelectorAll("[data-set]").forEach(b => b.onclick = () => {
     const k = +b.dataset.set; S.ui.set = k === currentSetIndex() ? null : k;
     const first = setLetters(k).find(L => !letterLearned(L)) || setLetters(k)[0]; S.ui.letter = first.i; save(); renderLetters();
@@ -259,7 +268,7 @@ function letterCard(L) {
   if (L.ch !== "ا") h += `<span class="break"></span>` + [["َ", "a"], ["ِ", "i"], ["ُ", "u"]].map(v => `<button class="tile vowel" data-say="${L.ch + v[0]}"><span class="g">${L.ch + v[0]}</span><small>${L.tr + v[1]}</small></button>`).join("");
   h += `</div>`;
   if (ex) h += `<p class="subhead exlabel">In the Quran</p><button class="example" id="exL" aria-label="Hear ${ex.tr}"><span class="txt">${ex.en}<span>${ex.tr}</span></span><span class="ar">${ex.ar}</span></button>`;
-  h += `<p class="meta quizhint">Studied the outlined letters? Take a 1-minute quiz.</p><div class="actions"><button class="btn primary" id="testL">${needToday().length ? `Quiz me on these ${needToday().length}` : "Practice quiz"}</button><button class="btn" id="markL">${letterLearned(L) ? "Mark not learned" : "Mark learned"}</button></div>`;
+  h += `<p class="meta quizhint">Studied the outlined letters? Take a 1-minute quiz.</p><div class="actions"><button class="btn primary" id="testL">${needToday().length ? `Quiz me on these ${needToday().length}` : "Practice quiz"}</button></div>`;
   return h;
 }
 function letterTestCard() {
@@ -298,12 +307,7 @@ function wireSpot() {
   document.querySelectorAll(".tile.vowel").forEach(b => b.onclick = () => { speak(b.dataset.say); pulse(b); });
   if ($("exL")) $("exL").onclick = () => { const ex = letterExample(LETTERS[S.ui.letter].ch); play(ex.audio, null, true); pulse($("exL")); };
   if ($("testL")) $("testL").onclick = startLetterTest;
-  if ($("markL")) $("markL").onclick = () => {
-    const L = LETTERS[S.ui.letter];
-    if (letterLearned(L)) delete S.letters[L.ch];
-    else { S.letters[L.ch] = { days: [addDays(today(), -1), today()], box: 2, seen: true, next: addDays(today(), 3) }; practiced(); }
-    save(); renderLetters();
-  };
+
   if ($("replayL")) $("replayL").onclick = () => { if (LT.target) play(LT.target.audio); pulse($("replayL")); };
   if ($("nextL")) $("nextL").onclick = nextLetterQ;
   if ($("stopL")) $("stopL").onclick = endLetterTest;

@@ -1,5 +1,5 @@
 // Offline support: saves the app, the Quran data and every audio clip on the device.
-const VERSION = "qwr-v1-10";
+const VERSION = "qwr-v1-11";
 const FONT_CACHE = "qwr-fonts";
 
 self.addEventListener("install", e => {

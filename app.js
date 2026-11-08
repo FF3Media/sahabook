@@ -59,7 +59,7 @@ const KEY = "qwr-v1";
 const today = () => new Date().toLocaleDateString("en-CA");
 const addDays = (d, n) => { const t = new Date(d + "T12:00:00"); t.setDate(t.getDate() + n); return t.toLocaleDateString("en-CA"); };
 const INTERVALS = [0, 1, 3, 7, 14, 30];
-function fresh() { return { letters: {}, words: {}, days: [], settings: { size: 1, speed: 1, gloss: "off" }, ui: { view: "letters", letter: null, surah: null } }; }
+function fresh() { return { letters: {}, words: {}, days: [], settings: { size: 1, speed: 1, gloss: "off" }, ui: { view: "home", letter: null, surah: null } }; }
 let S = fresh();
 function load() {
   try { const raw = localStorage.getItem(KEY); if (raw) { const s = JSON.parse(raw); S = Object.assign(fresh(), s); S.settings = Object.assign(fresh().settings, s.settings || {}); S.ui = Object.assign(fresh().ui, s.ui || {}); } } catch (e) {}
@@ -300,7 +300,7 @@ function surahRows(onlyList) {
 function renderRead() {
   if (!S.ui.surah) {
     const all = words(); const ks = knownShare(all);
-    main().innerHTML = `<div class="head"><div><p class="eyebrow">Stage 2 and 3 · Reading</p><h1 class="title">Read</h1><p class="sub">Your 16 surahs, the ones you can read best first.</p></div>
+    main().innerHTML = `<div class="head"><div><p class="eyebrow">Stage 3 · Understand</p><h1 class="title">Understand the surahs</h1><p class="sub">Your 16 surahs, the ones you can read best first.</p></div>
       <div class="ring">${ringSvg("wr", ks.known / ks.total)}<div><b>${ks.known} of ${ks.total}</b><span>words known</span></div></div></div>` + surahRows();
     document.querySelectorAll("[data-surah]").forEach(b => b.onclick = () => openSurah(+b.dataset.surah));
     return;
@@ -457,10 +457,32 @@ function renderProgress() {
 // ---------- Shell ----------
 function applySettings() { document.documentElement.style.setProperty("--ar-scale", S.settings.size); }
 function syncTabs() { document.querySelectorAll("[role=tab][data-view]").forEach(t => t.setAttribute("aria-selected", t.dataset.view === S.ui.view ? "true" : "false")); }
+function renderHome() {
+  const learned = LETTERS.filter(letterLearned).length;
+  const ks = knownShare(words());
+  const current = learned < 28 ? 1 : 3; // stage 2 isn't built yet
+  const stages = [
+    { n: 1, view: "letters", title: "Learn the letters", desc: "The 28 letters: their sounds and shapes.", stat: `${learned} of 28 letters learned`, frac: learned / 28 },
+    { n: 2, title: "Learn to read", desc: "Vowel marks, joining letters, and sounding out words from your surahs.", stat: learned < 28 ? "Unlocks after the letters" : "Coming soon", locked: true },
+    { n: 3, view: "read", title: "Understand the surahs", desc: "Word meanings in Al-Fatiha and the last 15 surahs.", stat: `${ks.known} of ${ks.total} words known`, frac: ks.known / ks.total },
+  ];
+  let h = `<div class="head"><div><p class="eyebrow">Sahabook</p><h1 class="title">Learn to read and understand the Quran</h1><p class="sub">Three stages, in order. Pick up where you left off.</p></div></div><div class="stages">`;
+  h += stages.map(st => `<div class="stage ${st.n === current ? "current" : ""} ${st.locked ? "locked" : ""}" ${st.view ? `data-go="${st.view}" role="button" tabindex="0"` : ""}>
+    <p class="snum">Stage ${st.n}${st.n === current ? " · You're here" : ""}</p><h2>${st.title}</h2><p class="sdesc">${st.desc}</p>
+    ${st.frac != null ? `<div class="qbar"><span style="width:${(st.frac * 100).toFixed(0)}%"></span></div>` : ""}<p class="meta">${st.stat}</p>
+    ${st.n === current ? `<button class="btn primary" data-go="${st.view}">Continue</button>` : ""}</div>`).join("");
+  h += `</div>`;
+  main().innerHTML = h;
+  document.querySelectorAll(".stage[data-go]").forEach(el => {
+    const go = () => { S.ui.view = el.dataset.go; LT = null; save(); render(); window.scrollTo(0, 0); };
+    el.onclick = go; el.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
+  });
+}
 function render() {
   syncTabs();
-  if (S.ui.view === "read") renderRead(); else if (S.ui.view === "progress") renderProgress(); else renderLetters();
+  if (S.ui.view === "read") renderRead(); else if (S.ui.view === "progress") renderProgress(); else if (S.ui.view === "letters") renderLetters(); else renderHome();
 }
+document.querySelector(".brand").onclick = () => { S.ui.view = "home"; LT = null; RT = null; save(); render(); window.scrollTo(0, 0); };
 document.querySelectorAll("[role=tab][data-view]").forEach(t => t.onclick = () => {
   if (S.ui.view === t.dataset.view && t.dataset.view === "read") { S.ui.surah = null; RT = null; }
   S.ui.view = t.dataset.view; LT = null; save(); render(); window.scrollTo(0, 0);
@@ -469,7 +491,7 @@ let lastWide = matchMedia("(min-width: 961px)").matches;
 window.addEventListener("resize", () => { const w = matchMedia("(min-width: 961px)").matches; if (w !== lastWide) { lastWide = w; render(); } });
 
 (async function boot() {
-  load(); applySettings();
+  load(); S.ui.view = "home"; applySettings();
   try {
     C = await (await fetch("data/content.json")).json();
   } catch (e) {

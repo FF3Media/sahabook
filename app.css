@@ -64,7 +64,7 @@ button:active { transform: scale(.97); }
 .tabbar { display: none; }
 @media (max-width: 760px) {
   .bar .seg { display: none; }
-  .tabbar { display: grid; grid-template-columns: repeat(3, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: var(--bar); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-top: .5px solid var(--hair);
+  .tabbar { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: var(--bar); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-top: .5px solid var(--hair);
     padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
   .tabbar button { border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; font-weight: 500; color: var(--muted); padding: 4px 0; }
   .tabbar button[aria-selected="true"] { color: var(--accent); }
@@ -265,3 +265,20 @@ textarea.backup { width: 100%; min-height: 90px; border-radius: 12px; border: 0;
 .tiles.missed .tile { width: 72px; flex: none; }
 .quizhint { text-align: center; margin: 14px 0 0; font-size: 13px; }
 @media (max-width: 600px) { .spot .subhead.exlabel { display: block; margin: 12px 0 6px; } }
+
+/* Home */
+.brand[role=button] { cursor: pointer; }
+.stages { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
+.stage { background: var(--surface); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; border: 2px solid transparent; transition: transform .15s; }
+.stage:active { transform: scale(.985); }
+.stage.current { border-color: var(--accent); }
+.stage.locked { cursor: default; opacity: .55; }
+.stage.locked:active { transform: none; }
+.stage .snum { margin: 0; font-size: 13px; font-weight: 600; color: var(--accent); }
+.stage.locked .snum { color: var(--muted); }
+.stage h2 { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.stage .sdesc { margin: 0 0 8px; color: var(--muted); font-size: 15px; flex: 1; }
+.stage .qbar { margin: 0; }
+.stage .meta { margin: 0; }
+.stage .btn { margin-top: 10px; align-self: flex-start; }
+@media (max-width: 760px) { .stages { grid-template-columns: 1fr; } }

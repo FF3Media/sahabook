@@ -298,7 +298,10 @@ textarea.backup { width: 100%; min-height: 90px; border-radius: 12px; border: 0;
 .setbar .here { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: inline-block; }
 [role=tab][aria-disabled="true"] { opacity: .4; cursor: default; }
 .settings .actions { flex-wrap: wrap; }
-.stepper { display: inline-flex; background: var(--fill); border-radius: 980px; padding: 2px; margin-left: 4px; }
-.stepper button { border: 0; background: none; width: 40px; height: 36px; border-radius: 980px; font-size: 20px; font-weight: 500; color: var(--ink); }
-.stepper button:active { background: var(--elevated); }
-.stepper button:disabled { opacity: .3; }
+.counter { display: flex; align-items: center; gap: 6px; background: var(--surface); border-radius: 980px; padding: 6px; }
+.counter .cbtn { width: 48px; height: 48px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; flex: none; }
+.counter .cbtn svg { width: 22px; height: 22px; }
+.counter .cbtn:disabled { background: var(--fill); color: var(--muted); }
+.counter .cval { text-align: center; min-width: 120px; padding: 0 4px; }
+.counter .cval b { display: block; font-family: var(--font-display); font-size: 24px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.counter .cval span { font-size: 13px; color: var(--muted); }

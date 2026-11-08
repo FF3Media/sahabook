@@ -223,8 +223,10 @@ function renderLetters() {
   if (S.ui.letter == null || !LETTERS[S.ui.letter]) S.ui.letter = (currentGroup()[0] || LETTERS[0]).i;
   const sel = LETTERS[S.ui.letter];
   let h = `<div class="head"><div><p class="eyebrow">Stage 1 · Letters</p><h1 class="title">The Arabic letters</h1><p class="sub nextstep">${nextStep()}</p></div>
-    <div class="ring">${ringSvg("lr", learned / 28)}<div><b>${learned} of 28</b><span>letters learned</span></div>
-    <div class="stepper" role="group" aria-label="Set letters learned"><button id="lessL" aria-label="One fewer letter learned" ${learned ? "" : "disabled"}>−</button><button id="moreL" aria-label="One more letter learned" ${learned < 28 ? "" : "disabled"}>+</button></div></div></div>`;
+    <div class="counter" role="group" aria-label="Letters learned">
+      <button class="cbtn" id="lessL" aria-label="One fewer letter learned" ${learned ? "" : "disabled"}>${I.left}</button>
+      <div class="cval"><b>${learned} of 28</b><span>letters learned</span></div>
+      <button class="cbtn" id="moreL" aria-label="One more letter learned" ${learned < 28 ? "" : "disabled"}>${I.right}</button></div></div>`;
   const vs = viewSet(), cs = currentSetIndex();
   h += `<div class="setbar"><div class="seg" role="group" aria-label="Letter sets">` + Array.from({ length: SETS }, (_, k) =>
     `<button data-set="${k}" aria-pressed="${k === vs}" ${LT ? "disabled" : ""}>Set ${k + 1}${setDone(k) ? ` <span class="ok">${I.check}</span>` : k === cs ? ` <span class="here"></span>` : ""}</button>`).join("") + `</div></div>`;
@@ -554,6 +556,8 @@ window.addEventListener("resize", () => { const w = matchMedia("(min-width: 961p
   }
   render();
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(reg => {
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update().catch(() => {}); });
+    }).catch(() => {});
   }
 })();

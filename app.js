@@ -1,5 +1,5 @@
 "use strict";
-/* Quranic Word Reader — version 1.
+/* Sahabook — version 1.
    One page per section, one spotlight card. Tap anything to hear it. "Test me" checks recall on the same page.
    Progress lives in this device's storage (localStorage). */
 

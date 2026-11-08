@@ -1,6 +1,6 @@
 {
-  "name": "Quranic Word Reader",
-  "short_name": "Quran Reader",
+  "name": "Sahabook",
+  "short_name": "Sahabook",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

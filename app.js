@@ -201,7 +201,7 @@ function renderLetters() {
   const learned = LETTERS.filter(letterLearned).length;
   if (S.ui.letter == null || !LETTERS[S.ui.letter]) S.ui.letter = (currentGroup()[0] || LETTERS[0]).i;
   const sel = LETTERS[S.ui.letter];
-  let h = `<div class="head"><div><p class="eyebrow">Stage 1 · Letters</p><h1 class="title">The Arabic letters</h1><p class="sub">Tap any letter to hear it. When you're ready, tap Done for a short test.</p></div>
+  let h = `<div class="head"><div><p class="eyebrow">Stage 1 · Letters</p><h1 class="title">The Arabic letters</h1><p class="sub">Tap any letter to hear it. When you've studied the outlined letters, take the quiz.</p></div>
     <div class="ring">${ringSvg("lr", learned / 28)}<div><b>${learned} of 28</b><span>letters learned</span></div></div></div>`;
   h += `<div class="split letters"><aside class="spot" id="spot">${LT ? letterTestCard() : letterCard(sel)}</aside>`;
   h += `<div><div class="lgrid ${LT ? "testing" : ""}" id="lgrid">` + LETTERS.map(L => {
@@ -210,7 +210,7 @@ function renderLetters() {
     if (!LT && L === sel) cls += " selected";
     if (LT && LT.answered) { if (L === LT.target) cls += " right"; else if (L === LT.answered) cls += " wrong"; }
     return `<button class="${cls}" data-i="${L.i}" aria-label="${L.name}">${st === "learned" && !LT ? `<span class="dot">${I.check}</span>` : ""}<span class="g">${L.ch}</span><small>${L.name}</small></button>`;
-  }).join("") + `</div><p class="small" style="margin-top:14px">Green letters are learned: you've picked them out correctly in the test on two different days. Outlined letters are the ones you're learning now.</p></div></div>`;
+  }).join("") + `</div><p class="small" style="margin-top:14px">Green letters are learned: you've picked them out correctly in the quiz on two different days. Outlined letters are the ones you're learning now.</p></div></div>`;
   main().innerHTML = h;
   document.querySelectorAll(".ltile").forEach(b => b.onclick = () => {
     const L = LETTERS[+b.dataset.i];
@@ -229,8 +229,8 @@ function letterCard(L) {
   h += `<p class="subhead">Shapes and vowels</p><div class="tiles">` + forms(L.ch).map(f => `<button class="tile shape"><span class="g">${f[0]}</span><small>${f[1]}</small></button>`).join("");
   if (L.ch !== "ا") h += `<span class="break"></span>` + [["َ", "a"], ["ِ", "i"], ["ُ", "u"]].map(v => `<button class="tile vowel" data-say="${L.ch + v[0]}"><span class="g">${L.ch + v[0]}</span><small>${L.tr + v[1]}</small></button>`).join("");
   h += `</div>`;
-  if (ex) h += `<button class="example" id="exL" aria-label="Hear ${ex.tr}"><span class="txt">${ex.en}<span>${ex.tr}</span></span><span class="ar">${ex.ar}</span></button>`;
-  h += `<div class="actions"><button class="btn primary" id="testL">Done</button></div>`;
+  if (ex) h += `<p class="subhead exlabel">In the Quran</p><button class="example" id="exL" aria-label="Hear ${ex.tr}"><span class="txt">${ex.en}<span>${ex.tr}</span></span><span class="ar">${ex.ar}</span></button>`;
+  h += `<p class="meta quizhint">Studied the outlined letters? Take a 1-minute quiz.</p><div class="actions"><button class="btn primary" id="testL">${currentGroup().length ? `Quiz me on these ${currentGroup().length}` : "Quiz me"}</button></div>`;
   return h;
 }
 function letterTestCard() {
@@ -238,21 +238,21 @@ function letterTestCard() {
   if (LT.finished) {
     const learned = LETTERS.filter(letterLearned).length;
     const msg = LT.right === total ? "All right. Come back tomorrow and pass again to lock these letters in." : "Tap a letter you missed to hear it again.";
-    return `<div class="spot-top"><span class="pill test">Test done</span><span class="meta">${learned} of 28 learned</span></div>
+    return `<div class="spot-top"><span class="pill test">Quiz done</span><span class="meta">${learned} of 28 learned</span></div>
       <div class="testcard"><p class="score">${LT.right} of ${total}</p><p class="meta" style="margin:0 0 6px">right</p>
       ${LT.missed.length ? `<div class="tiles missed">${LT.missed.map(L => `<button class="tile" data-miss="${L.i}"><span class="g">${L.ch}</span><small>${L.name}</small></button>`).join("")}</div>` : ""}
       <p class="hint">${msg}</p></div>
-      <div class="actions"><button class="btn primary" id="backL">Keep learning</button><button class="btn" id="againL">Test again</button></div>`;
+      <div class="actions"><button class="btn primary" id="backL">Keep learning</button><button class="btn" id="againL">Quiz again</button></div>`;
   }
   const t = LT.target, a = LT.answered;
   let fb = "";
   if (a) fb = a === t ? `<p class="feedback ok">Right. That's ${t.name}.</p>` : `<p class="feedback no">That was ${t.name}. You tapped ${a.name}.</p>`;
   const done = LT.idx + (a ? 1 : 0);
-  return `<div class="spot-top"><span class="pill test">Short test</span><span class="meta">${LT.idx + 1} of ${total}</span></div>
+  return `<div class="spot-top"><span class="pill test">Quiz</span><span class="meta">${LT.idx + 1} of ${total}</span></div>
     <div class="qbar"><span style="width:${(done / total * 100).toFixed(0)}%"></span></div>
     <div class="testcard"><button class="bigplay" id="replayL" aria-label="Play the sound again">${I.speak}</button>
     <p class="q">${a ? "" : "Which letter is this?"}</p><p class="meta" style="margin:0">${a ? "" : "Tap it in the grid."}</p>${fb}</div>
-    <div class="actions">${a && a !== t ? `<button class="btn primary" id="nextL">${LT.idx + 1 < total ? "Next" : "See score"}</button>` : ""}<button class="btn" id="stopL">Stop test</button></div>`;
+    <div class="actions">${a && a !== t ? `<button class="btn primary" id="nextL">${LT.idx + 1 < total ? "Next" : "See score"}</button>` : ""}<button class="btn" id="stopL">Stop quiz</button></div>`;
 }
 
 function wireSpot() {

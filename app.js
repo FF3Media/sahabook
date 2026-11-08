@@ -61,6 +61,13 @@ const addDays = (d, n) => { const t = new Date(d + "T12:00:00"); t.setDate(t.get
 const INTERVALS = [0, 1, 3, 7, 14, 30];
 function fresh() { return { letters: {}, words: {}, names: {}, lessons: {}, days: [], settings: { size: 1, speed: 1, gloss: "off" }, ui: { view: "home", letter: null, surah: null, name: 0 } }; }
 let S = fresh();
+function migrateLessons() {
+  // saved lesson progress used the 11-lesson numbering (4..10); move it to the 8-lesson numbering (1..7)
+  if (S.lessonsV === 2) return;
+  const old = S.lessons || {}; const moved = {};
+  for (const k in old) { const n = +k - 3; if (n >= 1) moved[n] = old[k]; }
+  S.lessons = moved; S.lessonsV = 2; S.ui.lesson = null; save();
+}
 function load() {
   try { const raw = localStorage.getItem(KEY); if (raw) { const s = JSON.parse(raw); S = Object.assign(fresh(), s); S.settings = Object.assign(fresh().settings, s.settings || {}); S.ui = Object.assign(fresh().ui, s.ui || {}); } } catch (e) {}
 }
@@ -147,7 +154,7 @@ const SETS = Math.ceil(LETTERS.length / GROUP_SIZE);
 function setOf(L) { return Math.floor(L.i / GROUP_SIZE); }
 function currentSetIndex() { const L = LETTERS.find(x => !letterLearned(x)); return L ? setOf(L) : SETS; }
 // The set you're looking at: the one you picked from the set tabs, or your current set.
-function viewSet() { const k = S.ui.lesson; return k != null && k >= 0 && k < SETS ? k : Math.min(currentSetIndex(), SETS - 1); }
+function viewSet() { return Math.min(currentSetIndex(), SETS - 1); }
 function setLetters(k) { return LETTERS.filter(L => setOf(L) === k); }
 function setDone(k) { return setLetters(k).every(letterLearned); }
 function currentGroup() { return setLetters(viewSet()).filter(L => !letterLearned(L)); }
@@ -157,7 +164,7 @@ function needToday() { const t = today(); return currentGroup().filter(L => !pas
 function nextStep() {
   const k = viewSet();
   const set = "";
-  if (setDone(k)) return currentSetIndex() >= SETS ? "All 28 letters learned. On to reading." : "Lesson learned. Take a practice quiz any time.";
+  if (setDone(k)) return currentSetIndex() >= SETS ? "All 28 letters learned. On to reading." : "These are learned. Take a practice quiz any time.";
   const need = needToday(), group = currentGroup();
   if (!need.length) return `Done for today. Pass the quiz again tomorrow to finish this set.`;
   if (group.every(L => !dayDots(L))) return `Today: study the ${group.length} outlined letters, then take the quiz.`;
@@ -221,15 +228,12 @@ function renderLetters() {
   const learned = LETTERS.filter(letterLearned).length;
   if (S.ui.letter == null || !LETTERS[S.ui.letter]) S.ui.letter = (currentGroup()[0] || LETTERS[0]).i;
   const sel = LETTERS[S.ui.letter];
-  let h = `<div class="head"><div><p class="eyebrow">Lesson ${viewSet() + 1} of ${LESSONS.length}</p><h1 class="title">${LESSONS[viewSet()].title}</h1><p class="sub nextstep">${nextStep()}</p></div>
-    <div class="counter" role="group" aria-label="Letters learned">
-      <button class="cbtn" id="lessL" aria-label="One fewer letter learned" ${learned ? "" : "disabled"}>${I.left}</button>
-      <div class="cval"><b>${learned} of 28</b><span>letters learned</span></div>
-      <button class="cbtn" id="moreL" aria-label="One more letter learned" ${learned < 28 ? "" : "disabled"}>${I.right}</button></div></div>`;
+  let h = `<div class="head"><div><p class="eyebrow">Lesson 1 of ${LESSONS.length}</p><h1 class="title">${LESSONS[0].title}</h1><p class="sub">${LESSONS[0].sub}</p><p class="sub nextstep">${learned} of 28 learned. ${nextStep()}</p></div>
+    ${lessonNav(0)}</div>`;
   const vs = viewSet();
-  h += lessonBar(vs, !!LT);
+  h += lessonBar(0, !!LT);
   h += `<div class="split letters"><aside class="spot" id="spot">${LT ? letterTestCard() : letterCard(sel)}</aside>`;
-  h += `<div><div class="lgrid ${LT ? "testing" : ""}" id="lgrid">` + setLetters(vs).map(L => {
+  h += `<div><div class="lgrid ${LT ? "testing" : ""}" id="lgrid">` + LETTERS.map(L => {
     const st = letterState(L);
     let cls = "ltile " + st;
     if (!LT && L === sel) cls += " selected";
@@ -243,15 +247,7 @@ function renderLetters() {
     if (LT) { if (LT.target && !LT.answered) answerLetter(L); else sayLetter(L, b); return; }
     S.ui.letter = L.i; save(); renderLetters(); sayLetter(L, document.querySelector(`.ltile[data-i="${L.i}"]`));
   });
-  // − / + next to the count: mark letters learned or not, in alphabet order.
-  const stepTo = more => {
-    if (more) { const L = LETTERS.find(x => !letterLearned(x)); if (!L) return; S.letters[L.ch] = { days: [addDays(today(), -1), today()], box: 2, seen: true, next: addDays(today(), 3) }; practiced(); }
-    else { const L = [...LETTERS].reverse().find(letterLearned); if (!L) return; delete S.letters[L.ch]; }
-    S.ui.lesson = null; S.ui.letter = (currentGroup()[0] || LETTERS[S.ui.letter]).i; save(); renderLetters();
-  };
-  document.getElementById("moreL").onclick = () => stepTo(true);
-  document.getElementById("lessL").onclick = () => stepTo(false);
-  wireLessonBar();
+  wireLessonBar(); wireLessonNav();
   wireSpot();
 }
 
@@ -274,7 +270,7 @@ function letterTestCard() {
     const learned = LETTERS.filter(letterLearned).length;
     const k = currentSetIndex();
     const unlocked = !LT.doneAtStart && setDone(LT.setAtStart);
-    const msg = unlocked ? (k >= SETS ? "All 28 letters learned." : `Lesson ${LT.setAtStart + 1} learned. Next up: Lesson ${LT.setAtStart + 2}.`)
+    const msg = unlocked ? (k >= SETS ? "All 28 letters learned." : `These ${GROUP_SIZE} letters are learned. The next ${GROUP_SIZE} are outlined.`)
       : (LT.missed.length ? "Tap a letter you missed to hear it again. " : "") + nextStep();
     return `<div class="spot-top"><span class="pill test">Quiz done</span><span class="meta">${learned} of 28 learned</span></div>
       <div class="testcard"><p class="score">${LT.right} of ${total}</p><p class="meta" style="margin:0 0 6px">right</p>
@@ -296,7 +292,7 @@ function letterTestCard() {
 function wireSpot() {
   const $ = id => document.getElementById(id);
   document.querySelectorAll("[data-step]").forEach(b => b.onclick = () => {
-    S.ui.letter = (S.ui.letter + +b.dataset.step + 28) % 28; S.ui.lesson = setOf(LETTERS[S.ui.letter]); save(); renderLetters();
+    S.ui.letter = (S.ui.letter + +b.dataset.step + 28) % 28; save(); renderLetters();
     const L = LETTERS[S.ui.letter]; sayLetter(L, document.querySelector(`.ltile[data-i="${L.i}"]`));
   });
   if ($("heroL")) $("heroL").onclick = () => sayLetter(LETTERS[S.ui.letter], $("heroL"));
@@ -318,7 +314,7 @@ function wireSpot() {
     spot.addEventListener("touchend", e => {
       if (x0 === null || e.target.closest(".tiles")) return;
       const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
-      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { S.ui.letter = (S.ui.letter + (dx > 0 ? 1 : -1) + 28) % 28; S.ui.lesson = setOf(LETTERS[S.ui.letter]); save(); renderLetters(); sayLetter(LETTERS[S.ui.letter]); }
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { S.ui.letter = (S.ui.letter + (dx > 0 ? 1 : -1) + 28) % 28; save(); renderLetters(); sayLetter(LETTERS[S.ui.letter]); }
     }, { passive: true });
   }
 }
@@ -327,17 +323,14 @@ function wireSpot() {
 // Lessons 1–4 are the letters (above). The rest follow the Noorani Qaida order.
 const HAMZA = ["أَ", "إِ", "أُ"];
 const VOWEL_LESSONS = {
-  5: { marks: [["َ", "a"], ["ِ", "i"], ["ُ", "u"]], make: (ch, i, m) => ch + m, tr: (L, v) => L.tr + v },
-  6: { marks: [["ً", "an"], ["ٍ", "in"], ["ٌ", "un"]], make: (ch, i, m) => ch + m, tr: (L, v) => L.tr + v },
-  7: { marks: [["َا", "aa"], ["ِي", "ii"], ["ُو", "uu"]], make: (ch, i, m) => ch + m, tr: (L, v) => L.tr + v },
-  8: { marks: [["َ", "a"], ["ِ", "i"], ["ُ", "u"]], make: (ch, i, m) => HAMZA[i] + ch + "ْ", tr: (L, v) => v + L.tr },
-  9: { marks: [["َ", "a"], ["ِ", "i"], ["ُ", "u"]], make: (ch, i, m) => HAMZA[i] + ch + "ّ" + m, tr: (L, v) => v + L.tr + L.tr + v },
+  2: { marks: [["َ", "a"], ["ِ", "i"], ["ُ", "u"]], make: (ch, i, m) => ch + m, tr: (L, v) => L.tr + v },
+  3: { marks: [["ً", "an"], ["ٍ", "in"], ["ٌ", "un"]], make: (ch, i, m) => ch + m, tr: (L, v) => L.tr + v },
+  4: { marks: [["َا", "aa"], ["ِي", "ii"], ["ُو", "uu"]], make: (ch, i, m) => ch + m, tr: (L, v) => L.tr + v },
+  5: { marks: [["َ", "a"], ["ِ", "i"], ["ُ", "u"]], make: (ch, i, m) => HAMZA[i] + ch + "ْ", tr: (L, v) => v + L.tr },
+  6: { marks: [["َ", "a"], ["ِ", "i"], ["ُ", "u"]], make: (ch, i, m) => HAMZA[i] + ch + "ّ" + m, tr: (L, v) => v + L.tr + L.tr + v },
 };
 const LESSONS = [
-  { title: "Letters: ا to خ", sub: "The first 7 letters." },
-  { title: "Letters: د to ص", sub: "The next 7 letters." },
-  { title: "Letters: ض to ق", sub: "The next 7 letters." },
-  { title: "Letters: ك to ي", sub: "The last 7 letters." },
+  { title: "The alphabet", sub: "All 28 letters. Tap any letter to hear it. Learn 7 at a time; the outlined ones are next." },
   { title: "Joined letters", sub: "Most letters change shape when they join: at the start, middle and end of a word." },
   { title: "Short vowels", sub: "Fatha (a) is a dash above, kasra (i) a dash below, damma (u) a small waw above." },
   { title: "Tanween", sub: "A doubled vowel mark adds an “n”: an, in, un. You'll see it at the end of words." },
@@ -346,10 +339,10 @@ const LESSONS = [
   { title: "Shadda", sub: "A small “w” shape doubles the letter: say it twice, as in “abba”." },
   { title: "Reading real words", sub: "Every word of Al-Fatiha, recited. Put it all together." },
 ];
-const LETTER_LESSONS = 4;
+const LETTER_LESSONS = 1; const JOINED = 1, WORDS = 7;
 function lessonItems(k) {
-  if (k < LETTER_LESSONS) return setLetters(k).map(L => ({ key: L.ch, L }));
-  if (k === 4) return LETTERS.map(L => ({ key: L.ch, L }));
+  if (k < LETTER_LESSONS) return LETTERS.map(L => ({ key: L.ch, L }));
+  if (k === JOINED) return LETTERS.map(L => ({ key: L.ch, L }));
   if (VOWEL_LESSONS[k]) { const V = VOWEL_LESSONS[k]; return LETTERS.filter(L => L.ch !== "ا").map(L => ({ key: L.ch, L, vars: V.marks.map((m, i) => ({ ar: V.make(L.ch, i, m[0]), tr: V.tr(L, m[1]) })) })); }
   const seen = new Set();
   return surahWords(1).filter(w => { const k2 = strip(w.ar); if (seen.has(k2)) return false; seen.add(k2); return true; }).map(w => ({ key: w.key, w }));
@@ -363,6 +356,12 @@ function lessonLearnedCount(k) { return lessonItems(k).filter(it => itemLearned(
 function currentLessonIndex() { for (let k = 0; k < LESSONS.length; k++) if (!lessonDone(k)) return k; return LESSONS.length; }
 function activeLesson() { const k = S.ui.lesson; return k != null && k >= 0 && k < LESSONS.length ? k : Math.min(currentLessonIndex(), LESSONS.length - 1); }
 function lessonGroup(k) { return lessonItems(k).filter(it => !itemLearned(k, it)).slice(0, GROUP_SIZE); }
+function lessonNav(k) {
+  return `<div class="counter" role="group" aria-label="Change lesson">
+      <button class="cbtn" data-lnav="-1" aria-label="Previous lesson" ${k > 0 ? "" : "disabled"}>${I.left}</button>
+      <div class="cval"><b>Lesson ${k + 1}</b><span>of ${LESSONS.length}</span></div>
+      <button class="cbtn" data-lnav="1" aria-label="Next lesson" ${k < LESSONS.length - 1 ? "" : "disabled"}>${I.right}</button></div>`;
+}
 function lessonBar(active, disabled) {
   const cur = currentLessonIndex();
   return `<div class="setbar"><div class="seg lessonseg" role="group" aria-label="Lessons">` + LESSONS.map((L, k) =>
@@ -374,23 +373,29 @@ function wireLessonBar() {
   if (bar && on) bar.scrollLeft = on.offsetLeft - bar.clientWidth / 2 + on.offsetWidth / 2;
   document.querySelectorAll("[data-lesson]").forEach(b => b.onclick = () => {
     const k = +b.dataset.lesson; S.ui.lesson = k; LT = null; XT = null; S.ui.item = 0;
-    if (k < LETTER_LESSONS) { const first = setLetters(k).find(L => !letterLearned(L)) || setLetters(k)[0]; S.ui.letter = first.i; }
+    if (k < LETTER_LESSONS) { S.ui.letter = (currentGroup()[0] || LETTERS[0]).i; }
     else { const items = lessonItems(k); const g = lessonGroup(k)[0]; S.ui.item = g ? items.indexOf(g) : 0; }
     save(); renderLessons(); window.scrollTo(0, 0);
   });
 }
-function renderLessons() { if (activeLesson() < LETTER_LESSONS) { S.ui.lesson = activeLesson(); renderLetters(); } else renderLesson(activeLesson()); }
+function renderLessons() { if (activeLesson() < LETTER_LESSONS) renderLetters(); else renderLesson(activeLesson()); }
+function wireLessonNav() {
+  document.querySelectorAll("[data-lnav]").forEach(b => b.onclick = () => {
+    const k = Math.max(0, Math.min(LESSONS.length - 1, activeLesson() + +b.dataset.lnav));
+    const btn = document.querySelector(`[data-lesson="${k}"]`); if (btn) btn.click();
+  });
+}
 
 function sayItem(k, it, which, el) {
-  if (k === 10) { if (it.w.audio) play(it.w.audio, null, true); }
-  else if (k === 4) play(it.L.audio);
+  if (k === WORDS) { if (it.w.audio) play(it.w.audio, null, true); }
+  else if (k === JOINED) play(it.L.audio);
   else speak(it.vars[which == null ? 0 : which].ar);
   pulse(el);
 }
 let XT = null; // quiz for lessons 5–11
 function lessonNextStep(k) {
   const g = lessonGroup(k);
-  if (!g.length) return "Lesson learned. Take a practice quiz any time.";
+  if (!g.length) return "These are learned. Take a practice quiz any time.";
   const need = g.filter(it => !itemPassedToday(k, it));
   if (!need.length) return "Done for today. Pass the quiz again tomorrow to lock these in.";
   if (g.every(it => !itemDots(k, it))) return `Today: study the ${g.length} outlined, then take the quiz.`;
@@ -412,7 +417,7 @@ function askLesson() {
     XT.which = Math.floor(Math.random() * 3);
     XT.choices = shuffle(t.vars.map((v, i) => ({ id: String(i), html: `<span class="cg">${v.ar}</span>`, ok: i === XT.which })));
     XT.q = "Which one did you hear?";
-  } else if (k === 4) {
+  } else if (k === JOINED) {
     const f = forms(t.L.ch); const nj = NON_JOINING.includes(t.L.ch);
     const pick = nj ? f[3] : f[1 + Math.floor(Math.random() * 3)];
     XT.shown = pick;
@@ -426,7 +431,7 @@ function askLesson() {
     XT.q = "Which word did you hear?";
   }
   renderLesson(k);
-  if (k !== 4) sayItem(k, t, XT.which);
+  if (k !== JOINED) sayItem(k, t, XT.which);
 }
 function answerLesson(id) {
   if (!XT || XT.answered || XT.finished) return;
@@ -434,7 +439,7 @@ function answerLesson(id) {
   XT.answered = id; if (ok) XT.right++; else XT.missed.push(XT.target);
   record(lstore(XT.k), XT.target.key, ok);
   renderLesson(XT.k);
-  if (XT.k === 4) play(XT.target.L.audio);
+  if (XT.k === JOINED) play(XT.target.L.audio);
   if (ok) autoNext = setTimeout(() => { XT.idx++; askLesson(); }, 1000);
 }
 function itemTile(k, it, i, sel) {
@@ -444,14 +449,14 @@ function itemTile(k, it, i, sel) {
   const pips = st === "learning" ? `<span class="pips" aria-hidden="true"><i class="${itemDots(k, it) > 0 ? "on" : ""}"></i><i class="${itemDots(k, it) > 1 ? "on" : ""}"></i></span>` : "";
   const mark = learned ? `<span class="dot">${I.check}</span>` : pips;
   let body;
-  if (k === 4) body = `<span class="g">${forms(it.L.ch).slice(1).map(f => f[0]).join(" ")}</span><small>${it.L.name}</small>`;
+  if (k === JOINED) body = `<span class="g">${forms(it.L.ch).slice(1).map(f => f[0]).join(" ")}</span><small>${it.L.name}</small>`;
   else if (VOWEL_LESSONS[k]) body = `<span class="g">${it.vars.map(v => v.ar).join(" ")}</span><small>${it.L.name}</small>`;
   else body = `<span class="g w">${it.w.ar}</span><small>${it.w.tr}</small>`;
   return `<button class="${cls}" data-x="${i}" aria-label="${it.L ? it.L.name : it.w.tr}">${mark}${body}</button>`;
 }
 function itemCard(k, it, n) {
   let h = `<div class="spot-top"><button class="navbtn" data-xstep="-1" aria-label="Previous">${I.left}</button><span class="pill ${itemLearned(k, it) ? "known" : "learning"}">${itemLearned(k, it) ? "Learned" : `${n + 1} of ${lessonItems(k).length}`}</span><button class="navbtn" data-xstep="1" aria-label="Next">${I.right}</button></div>`;
-  if (k === 4) {
+  if (k === JOINED) {
     h += `<button class="hero" id="heroX" aria-label="Hear ${it.L.name}"><span class="glyph">${it.L.ch}</span><span class="name">${it.L.name}<span class="spk">${I.speak}</span></span></button>`;
     h += `<p class="subhead">Its shapes</p><div class="tiles">` + forms(it.L.ch).map(f => `<button class="tile shape" data-xsay="0"><span class="g">${f[0]}</span><small>${f[1]}</small></button>`).join("") + `</div>`;
     h += `<p class="hint">${NON_JOINING.includes(it.L.ch) ? "This letter never joins to the letter after it, so it only has two shapes." : "Look for the part that stays the same in every shape."}</p>`;
@@ -476,7 +481,7 @@ function lessonQuizCard() {
   }
   const a = XT.answered, t = XT.target;
   const fin = XT.idx + (a ? 1 : 0);
-  const prompt = k === 4 ? `<div class="formshow">${XT.shown[0]}</div>` : `<button class="bigplay" id="replayX" aria-label="Play it again">${I.speak}</button>`;
+  const prompt = k === JOINED ? `<div class="formshow">${XT.shown[0]}</div>` : `<button class="bigplay" id="replayX" aria-label="Play it again">${I.speak}</button>`;
   const right = XT.choices.find(c => c.ok);
   return `<div class="spot-top"><span class="pill test">Quiz</span><span class="meta">${XT.idx + 1} of ${total}</span></div>
     <div class="qbar"><span style="width:${(fin / total * 100).toFixed(0)}%"></span></div>
@@ -489,17 +494,14 @@ function renderLesson(k) {
   if (S.ui.item == null || !items[S.ui.item]) S.ui.item = 0;
   const sel = items[S.ui.item];
   const learned = lessonLearnedCount(k);
-  let h = `<div class="head"><div><p class="eyebrow">Lesson ${k + 1} of ${LESSONS.length}</p><h1 class="title">${LESSONS[k].title}</h1><p class="sub">${LESSONS[k].sub}</p><p class="sub nextstep">${lessonNextStep(k)}</p></div>
-    <div class="counter" role="group" aria-label="Learned in this lesson">
-      <button class="cbtn" id="lessX" aria-label="One fewer learned" ${learned ? "" : "disabled"}>${I.left}</button>
-      <div class="cval"><b>${learned} of ${items.length}</b><span>learned</span></div>
-      <button class="cbtn" id="moreX" aria-label="One more learned" ${learned < items.length ? "" : "disabled"}>${I.right}</button></div></div>`;
+  let h = `<div class="head"><div><p class="eyebrow">Lesson ${k + 1} of ${LESSONS.length}</p><h1 class="title">${LESSONS[k].title}</h1><p class="sub">${LESSONS[k].sub}</p><p class="sub nextstep">${learned} of ${items.length} learned. ${lessonNextStep(k)}</p></div>
+    ${lessonNav(k)}</div>`;
   h += lessonBar(k, !!XT);
-  h += `<div class="split letters"><aside class="spot" id="spot">${XT ? lessonQuizCard() : itemCard(k, sel, S.ui.item)}</aside><div><div class="xgrid ${k === 10 ? "words" : ""} ${XT ? "testing" : ""}">` +
+  h += `<div class="split letters"><aside class="spot" id="spot">${XT ? lessonQuizCard() : itemCard(k, sel, S.ui.item)}</aside><div><div class="xgrid ${k === WORDS ? "words" : ""} ${XT ? "testing" : ""}">` +
     items.map((it, i) => itemTile(k, it, i, !XT && i === S.ui.item)).join("") + `</div></div></div>`;
   main().innerHTML = h;
   const $ = id => document.getElementById(id);
-  wireLessonBar();
+  wireLessonBar(); wireLessonNav();
   document.querySelectorAll("[data-x]").forEach(b => b.onclick = () => {
     const i = +b.dataset.x;
     if (XT && !XT.finished) { sayItem(k, items[i], 0, b); return; }
@@ -514,13 +516,6 @@ function renderLesson(k) {
   if ($("nextX")) $("nextX").onclick = () => { XT.idx++; askLesson(); };
   if ($("stopX")) $("stopX").onclick = () => { clearTimeout(autoNext); const fin = XT && XT.finished && lessonDone(k); XT = null; if (fin) S.ui.lesson = null; save(); renderLessons(); };
   if ($("againX")) $("againX").onclick = () => startLessonQuiz(k);
-  const stepX = more => {
-    const st = lstore(k);
-    if (more) { const it = items.find(x => !itemLearned(k, x)); if (!it) return; st[it.key] = { days: [addDays(today(), -1), today()], box: 2, seen: true, next: addDays(today(), 3) }; practiced(); }
-    else { const it = [...items].reverse().find(x => itemLearned(k, x)); if (!it) return; delete st[it.key]; }
-    save(); renderLesson(k);
-  };
-  $("moreX").onclick = () => stepX(true); $("lessX").onclick = () => stepX(false);
 }
 
 // ---------- Read ----------
@@ -699,10 +694,7 @@ function renderNames() {
   const learned = N.filter(nameLearned).length;
   const sel = N[S.ui.name] || N[0];
   let h = `<div class="head"><div><p class="eyebrow">Al-Asma ul-Husna</p><h1 class="title">The 99 Names of Allah</h1><p class="sub nextstep">Tap any name to hear it. Outlined names are the next ${NAME_GROUP} to learn.</p></div>
-    <div class="counter" role="group" aria-label="Names learned">
-      <button class="cbtn" id="lessN" aria-label="One fewer name learned" ${learned ? "" : "disabled"}>${I.left}</button>
-      <div class="cval"><b>${learned} of 99</b><span>names learned</span></div>
-      <button class="cbtn" id="moreN" aria-label="One more name learned" ${learned < 99 ? "" : "disabled"}>${I.right}</button></div></div>`;
+    <div class="ring">${ringSvg("nr", learned / 99)}<div><b>${learned} of 99</b><span>names learned</span></div></div></div>`;
   h += `<div class="split letters"><aside class="spot" id="spot">${NT ? nameQuizCard() : nameCard(sel)}</aside><div><div class="ngrid ${NT ? "testing" : ""}">` + N.map((x, i) => {
     const st = nameState(x);
     let cls = "ntile " + st;
@@ -717,12 +709,6 @@ function renderNames() {
     if (NT && !NT.finished) { sayName(x, b); return; }
     NT = null; S.ui.name = +b.dataset.n; save(); renderNames(); sayName(x, document.querySelector(`[data-n="${b.dataset.n}"]`));
   });
-  const stepN = more => {
-    if (more) { const x = N.find(y => !nameLearned(y)); if (!x) return; S.names[x.n] = { days: [addDays(today(), -1), today()], box: 2, seen: true, next: addDays(today(), 3) }; practiced(); }
-    else { const x = [...N].reverse().find(nameLearned); if (!x) return; delete S.names[x.n]; }
-    save(); renderNames();
-  };
-  $("moreN").onclick = () => stepN(true); $("lessN").onclick = () => stepN(false);
   document.querySelectorAll("[data-nstep]").forEach(b => b.onclick = () => { S.ui.name = (S.ui.name + +b.dataset.nstep + 99) % 99; save(); renderNames(); sayName(N[S.ui.name]); });
   if ($("heroN")) $("heroN").onclick = () => sayName(N[S.ui.name], $("heroN"));
   if ($("quizN")) $("quizN").onclick = startNameQuiz;
@@ -781,7 +767,7 @@ function renderProgress() {
   </div>
   <h2 class="section-title">Designer tools</h2><div class="settings">
     <div class="setrow" style="display:block"><div class="lbl"><b>Jump ahead</b><span>For trying the app out. These change your real progress.</span></div>
-      <div class="actions" style="margin-top:8px"><button class="btn" id="dSet">Mark current set learned</button><button class="btn" id="dAll">Mark all letters learned</button><button class="btn" id="dDay">Pretend a day has passed</button></div><p class="small" id="dmsg"></p></div></div>
+      <div class="actions" style="margin-top:8px"><button class="btn" id="dSet">Mark 7 more letters learned</button><button class="btn" id="dLesson">Mark current lesson learned</button><button class="btn" id="dNames">Mark 10 more names learned</button><button class="btn" id="dDay">Pretend a day has passed</button></div><p class="small" id="dmsg"></p></div></div>
   <p class="credits">Text, word meanings and word audio: Quran.com. Roots and grammar: Quranic Arabic Corpus. Verse recitation: Mahmoud Khalil Al-Husary (EveryAyah). Translation: Saheeh International. Letter names: Abjad-Kids dataset (MIT license); vowel sounds use your device's voice for now.</p>`;
   main().innerHTML = h;
   document.querySelectorAll("[data-surah]").forEach(b => b.onclick = () => { S.ui.view = "read"; openSurah(+b.dataset.surah); syncTabs(); });
@@ -792,15 +778,21 @@ function renderProgress() {
   document.getElementById("restoreB").onclick = () => { try { const v = JSON.parse(document.getElementById("backup").value); if (!v.letters || !v.words) throw 0; Object.assign(S, { letters: v.letters, words: v.words, days: v.days || [] }); save(); msg("Restored."); renderProgress(); } catch (e) { msg("That text isn't a valid backup. Paste the whole backup and try again."); } };
   const dmsg = t => { document.getElementById("dmsg").textContent = t; };
   const markLearned = list => { const y = addDays(today(), -1); list.forEach(L => { S.letters[L.ch] = { days: [y, today()], box: 2, seen: true, next: addDays(today(), 3) }; }); practiced(); S.ui.lesson = null; save(); renderProgress(); };
-  document.getElementById("dSet").onclick = () => { const k = currentSetIndex(); if (k >= SETS) return dmsg("All sets are already learned."); markLearned(setLetters(k)); dmsg(`Set ${k + 1} marked learned.`); };
-  document.getElementById("dAll").onclick = () => { markLearned(LETTERS); dmsg("All 28 letters marked learned."); };
+  const done = () => ({ days: [addDays(today(), -1), today()], box: 2, seen: true, next: addDays(today(), 3) });
+  document.getElementById("dSet").onclick = () => { const k = currentSetIndex(); if (k >= SETS) return dmsg("All 28 letters are already learned."); markLearned(setLetters(k)); dmsg(`${LETTERS.filter(letterLearned).length} of 28 letters learned.`); };
+  document.getElementById("dLesson").onclick = () => {
+    const k = currentLessonIndex(); if (k >= LESSONS.length) return dmsg("Every lesson is already learned.");
+    if (k < LETTER_LESSONS) markLearned(LETTERS); else { lessonItems(k).forEach(it => { lstore(k)[it.key] = done(); }); practiced(); save(); renderProgress(); }
+    dmsg(`Lesson ${k + 1} (${LESSONS[k].title}) marked learned.`);
+  };
+  document.getElementById("dNames").onclick = () => { N.filter(x => !nameLearned(x)).slice(0, 10).forEach(x => { S.names[x.n] = done(); }); practiced(); save(); renderProgress(); dmsg(`${N.filter(nameLearned).length} of 99 names learned.`); };
   document.getElementById("dDay").onclick = () => {
     const back = d => addDays(d, -1);
-    for (const store of [S.letters, S.words]) for (const k in store) { const r = store[k]; if (r.days) r.days = r.days.map(back); if (r.next) r.next = back(r.next); }
+    for (const store of [S.letters, S.words, S.names, ...Object.values(S.lessons)]) for (const k in store) { const r = store[k]; if (r.days) r.days = r.days.map(back); if (r.next) r.next = back(r.next); }
     S.days = S.days.map(back); save(); renderProgress(); dmsg("Moved everything back one day, so the app now treats today as tomorrow.");
   };
   let armed = false;
-  document.getElementById("resetB").onclick = e => { if (!armed) { armed = true; e.target.textContent = "Tap again to erase everything"; return; } const s = S.settings; S = fresh(); S.settings = s; save(); renderProgress(); };
+  document.getElementById("resetB").onclick = e => { if (!armed) { armed = true; e.target.textContent = "Tap again to erase everything"; return; } const s = S.settings; S = fresh(); S.lessonsV = 2; S.settings = s; save(); renderProgress(); };
 }
 
 // ---------- Shell ----------
@@ -813,7 +805,7 @@ function renderHome() {
   const lessonsDone = LESSONS.filter((_, k) => lessonDone(k)).length;
   const current = cl < LESSONS.length ? 1 : 2;
   const stages = [
-    { n: 1, view: "letters", title: "Learn to read", desc: "11 lessons: the letters, their shapes, vowel marks, and reading real words.", stat: cl < LESSONS.length ? `Lesson ${cl + 1} of ${LESSONS.length}: ${LESSONS[cl].title}` : "All 11 lessons learned", frac: lessonsDone / LESSONS.length },
+    { n: 1, view: "letters", title: "Learn to read", desc: `${LESSONS.length} lessons: the alphabet, joined letters, vowel marks, and reading real words.`, stat: cl < LESSONS.length ? `Lesson ${cl + 1} of ${LESSONS.length}: ${LESSONS[cl].title}` : `All ${LESSONS.length} lessons learned`, frac: lessonsDone / LESSONS.length },
     { n: 2, view: "read", title: "Understand the surahs", desc: "Word meanings in Al-Fatiha and the last 15 surahs.", stat: `${ks.known} of ${ks.total} words known`, frac: ks.known / ks.total },
   ];
   let h = `<div class="head"><div><p class="eyebrow">Sahabook</p><h1 class="title">Learn to read and understand the Quran</h1><p class="sub">Two stages, in order. Pick up where you left off.</p></div></div><div class="stages">`;
@@ -844,7 +836,7 @@ let lastWide = matchMedia("(min-width: 961px)").matches;
 window.addEventListener("resize", () => { const w = matchMedia("(min-width: 961px)").matches; if (w !== lastWide) { lastWide = w; render(); } });
 
 (async function boot() {
-  load(); S.ui.view = "home"; applySettings();
+  load(); migrateLessons(); S.ui.view = "home"; applySettings();
   try {
     [C, N] = await Promise.all([fetch("data/content.json").then(r => r.json()), fetch("data/names.json").then(r => r.json()).then(d => d.names)]);
   } catch (e) {

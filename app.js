@@ -507,7 +507,7 @@ function renderHome() {
   const current = learned < 28 ? 1 : 3; // stage 2 isn't built yet
   const stages = [
     { n: 1, view: "letters", title: "Learn the letters", desc: "The 28 letters: their sounds and shapes.", stat: learned < 28 ? `Set ${currentSetIndex() + 1} of ${SETS} · ${learned} of 28 letters learned` : "All 28 letters learned", frac: learned / 28 },
-    { n: 2, title: "Learn to read", desc: "Vowel marks, joining letters, and sounding out words from your surahs.", stat: learned < 28 ? "Unlocks after the letters" : "Coming soon", locked: true },
+    { n: 2, title: "Learn to read", desc: "Vowel marks, joining letters, and sounding out words from your surahs.", stat: "Coming soon", locked: true },
     { n: 3, view: "read", title: "Understand the surahs", desc: "Word meanings in Al-Fatiha and the last 15 surahs.", stat: `${ks.known} of ${ks.total} words known`, frac: ks.known / ks.total },
   ];
   let h = `<div class="head"><div><p class="eyebrow">Sahabook</p><h1 class="title">Learn to read and understand the Quran</h1><p class="sub">Three stages, in order. Pick up where you left off.</p></div></div><div class="stages">`;

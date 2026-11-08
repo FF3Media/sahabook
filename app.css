@@ -64,7 +64,7 @@ button:active { transform: scale(.97); }
 .tabbar { display: none; }
 @media (max-width: 760px) {
   .bar .seg { display: none; }
-  .tabbar { display: grid; grid-template-columns: repeat(4, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: var(--bar); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-top: .5px solid var(--hair);
+  .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; background: var(--bar); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-top: .5px solid var(--hair);
     padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); }
   .tabbar button { border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; font-weight: 500; color: var(--muted); padding: 4px 0; }
   .tabbar button[aria-selected="true"] { color: var(--accent); }
@@ -289,3 +289,12 @@ textarea.backup { width: 100%; min-height: 90px; border-radius: 12px; border: 0;
 .ltile .pips i.on { background: var(--accent); }
 .nextstep { color: var(--ink); font-weight: 500; }
 .hint.unlocked { color: var(--accent); font-weight: 600; font-size: 17px; }
+
+/* Set tabs, disabled tab, designer tools */
+.setbar { margin: -4px 0 16px; overflow-x: auto; scrollbar-width: none; }
+.setbar .seg button { display: inline-flex; align-items: center; gap: 6px; }
+.setbar .seg button:disabled { opacity: .5; }
+.setbar .ok svg { width: 12px; height: 12px; color: var(--accent); display: block; }
+.setbar .here { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: inline-block; }
+[role=tab][aria-disabled="true"] { opacity: .4; cursor: default; }
+.settings .actions { flex-wrap: wrap; }

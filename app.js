@@ -146,14 +146,18 @@ function letterLearned(L) { const r = letterRec(L); return !!(r && r.days && r.d
 const SETS = Math.ceil(LETTERS.length / GROUP_SIZE);
 function setOf(L) { return Math.floor(L.i / GROUP_SIZE); }
 function currentSetIndex() { const L = LETTERS.find(x => !letterLearned(x)); return L ? setOf(L) : SETS; }
-function currentGroup() { const k = currentSetIndex(); return LETTERS.filter(L => setOf(L) === k && !letterLearned(L)); }
+// The set you're looking at: the one you picked from the set tabs, or your current set.
+function viewSet() { const k = S.ui.set; return k != null && k >= 0 && k < SETS ? k : Math.min(currentSetIndex(), SETS - 1); }
+function setLetters(k) { return LETTERS.filter(L => setOf(L) === k); }
+function setDone(k) { return setLetters(k).every(letterLearned); }
+function currentGroup() { return setLetters(viewSet()).filter(L => !letterLearned(L)); }
 function passedOn(L, d) { const r = letterRec(L); return !!(r && r.days && r.days.includes(d)); }
 function dayDots(L) { const r = letterRec(L); return Math.min(2, r && r.days ? r.days.length : 0); }
 function needToday() { const t = today(); return currentGroup().filter(L => !passedOn(L, t)); }
 function nextStep() {
-  const k = currentSetIndex();
-  if (k >= SETS) return "All 28 letters learned. On to reading.";
+  const k = viewSet();
   const set = `Set ${k + 1} of ${SETS}.`;
+  if (setDone(k)) return currentSetIndex() >= SETS ? "All 28 letters learned. On to reading." : `${set} Learned. Take a practice quiz any time.`;
   const need = needToday(), group = currentGroup();
   if (!need.length) return `${set} Done for today. Pass the quiz again tomorrow to finish this set.`;
   if (group.every(L => !dayDots(L))) return `${set} Today: study the ${group.length} outlined letters, then take the quiz.`;
@@ -183,14 +187,14 @@ function pickLetterTarget() {
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 function buildLetterQuiz() {
   const t = today();
-  const group = needToday().length ? needToday() : currentGroup();
+  const group = needToday().length ? needToday() : (currentGroup().length ? currentGroup() : setLetters(viewSet()));
   const due = shuffle(LETTERS.filter(L => letterLearned(L) && (letterRec(L).next || t) <= t)).slice(0, 3);
   let q = [...group, ...due];
-  if (!q.length) q = shuffle(LETTERS).slice(0, GROUP_SIZE);
+  if (!q.length) q = setLetters(viewSet());
   return shuffle(q);
 }
 let autoNext = null;
-function startLetterTest() { LT = { setAtStart: currentSetIndex(), queue: buildLetterQuiz(), idx: 0, right: 0, missed: [], target: null, answered: null, finished: false }; askLetter(); }
+function startLetterTest() { LT = { setAtStart: viewSet(), doneAtStart: setDone(viewSet()), queue: buildLetterQuiz(), idx: 0, right: 0, missed: [], target: null, answered: null, finished: false }; askLetter(); }
 function askLetter() {
   clearTimeout(autoNext);
   if (LT.idx >= LT.queue.length) { LT.finished = true; LT.target = null; LT.answered = null; renderLetters(); return; }
@@ -205,7 +209,7 @@ function answerLetter(L) {
   renderLetters();
   if (ok) autoNext = setTimeout(nextLetterQ, 900); else play(LT.target.audio);
 }
-function endLetterTest() { clearTimeout(autoNext); LT = null; S.ui.letter = (currentGroup()[0] || LETTERS[S.ui.letter] || LETTERS[0]).i; save(); renderLetters(); }
+function endLetterTest() { clearTimeout(autoNext); if (LT && LT.finished && !LT.doneAtStart && setDone(LT.setAtStart)) S.ui.set = null; LT = null; S.ui.letter = (currentGroup()[0] || LETTERS[S.ui.letter] || LETTERS[0]).i; save(); renderLetters(); }
 
 // ---------- Views ----------
 const main = () => document.getElementById("main");
@@ -220,6 +224,9 @@ function renderLetters() {
   const sel = LETTERS[S.ui.letter];
   let h = `<div class="head"><div><p class="eyebrow">Stage 1 · Letters</p><h1 class="title">The Arabic letters</h1><p class="sub nextstep">${nextStep()}</p></div>
     <div class="ring">${ringSvg("lr", learned / 28)}<div><b>${learned} of 28</b><span>letters learned</span></div></div></div>`;
+  const vs = viewSet(), cs = currentSetIndex();
+  h += `<div class="setbar"><div class="seg" role="group" aria-label="Letter sets">` + Array.from({ length: SETS }, (_, k) =>
+    `<button data-set="${k}" aria-pressed="${k === vs}" ${LT ? "disabled" : ""}>Set ${k + 1}${setDone(k) ? ` <span class="ok">${I.check}</span>` : k === cs ? ` <span class="here"></span>` : ""}</button>`).join("") + `</div></div>`;
   h += `<div class="split letters"><aside class="spot" id="spot">${LT ? letterTestCard() : letterCard(sel)}</aside>`;
   h += `<div><div class="lgrid ${LT ? "testing" : ""}" id="lgrid">` + LETTERS.map(L => {
     const st = letterState(L);
@@ -228,12 +235,16 @@ function renderLetters() {
     if (LT && LT.answered) { if (L === LT.target) cls += " right"; else if (L === LT.answered) cls += " wrong"; }
     const pips = st === "learning" && !LT ? `<span class="pips" aria-hidden="true"><i class="${dayDots(L) > 0 ? "on" : ""}"></i><i class="${dayDots(L) > 1 ? "on" : ""}"></i></span>` : "";
     return `<button class="${cls}" data-i="${L.i}" aria-label="${L.name}">${st === "learned" && !LT ? `<span class="dot">${I.check}</span>` : ""}${pips}<span class="g">${L.ch}</span><small>${L.name}</small></button>`;
-  }).join("") + `</div><p class="small" style="margin-top:14px">Outlined letters are your current set. Each dot is a day you passed that letter in the quiz. Two dots and it turns green: learned. Learn all 7 and the next set unlocks.</p></div></div>`;
+  }).join("") + `</div><p class="small" style="margin-top:14px">Outlined letters are the set you're on. Each dot is a day you passed that letter in the quiz. Two dots and it turns green: learned. Every set is open; the green dot on a set tab marks where you're up to.</p></div></div>`;
   main().innerHTML = h;
   document.querySelectorAll(".ltile").forEach(b => b.onclick = () => {
     const L = LETTERS[+b.dataset.i];
     if (LT) { if (LT.target && !LT.answered) answerLetter(L); else sayLetter(L, b); return; }
     S.ui.letter = L.i; save(); renderLetters(); sayLetter(L, document.querySelector(`.ltile[data-i="${L.i}"]`));
+  });
+  document.querySelectorAll("[data-set]").forEach(b => b.onclick = () => {
+    const k = +b.dataset.set; S.ui.set = k === currentSetIndex() ? null : k;
+    const first = setLetters(k).find(L => !letterLearned(L)) || setLetters(k)[0]; S.ui.letter = first.i; save(); renderLetters();
   });
   wireSpot();
 }
@@ -256,8 +267,8 @@ function letterTestCard() {
   if (LT.finished) {
     const learned = LETTERS.filter(letterLearned).length;
     const k = currentSetIndex();
-    const unlocked = k > LT.setAtStart;
-    const msg = unlocked ? (k >= SETS ? "All 28 letters learned." : `Set ${LT.setAtStart + 1} done. Set ${k + 1} unlocked.`)
+    const unlocked = !LT.doneAtStart && setDone(LT.setAtStart);
+    const msg = unlocked ? (k >= SETS ? "All 28 letters learned." : `Set ${LT.setAtStart + 1} done. Next up: Set ${k + 1}.`)
       : (LT.missed.length ? "Tap a letter you missed to hear it again. " : "") + nextStep().replace(/^Set \d+ of \d+\. /, "");
     return `<div class="spot-top"><span class="pill test">Quiz done</span><span class="meta">${learned} of 28 learned</span></div>
       <div class="testcard"><p class="score">${LT.right} of ${total}</p><p class="meta" style="margin:0 0 6px">right</p>
@@ -463,6 +474,9 @@ function renderProgress() {
       <textarea class="backup" id="backup" aria-label="Backup">${JSON.stringify({ letters: S.letters, words: S.words, days: S.days }).replace(/</g, "&lt;")}</textarea>
       <div class="actions" style="margin-top:8px"><button class="btn" id="copyB">Copy</button><button class="btn" id="restoreB">Restore from text</button><button class="btn" id="resetB">Reset</button></div><p class="small" id="bmsg"></p></div>
   </div>
+  <h2 class="section-title">Designer tools</h2><div class="settings">
+    <div class="setrow" style="display:block"><div class="lbl"><b>Jump ahead</b><span>For trying the app out. These change your real progress.</span></div>
+      <div class="actions" style="margin-top:8px"><button class="btn" id="dSet">Mark current set learned</button><button class="btn" id="dAll">Mark all letters learned</button><button class="btn" id="dDay">Pretend a day has passed</button></div><p class="small" id="dmsg"></p></div></div>
   <p class="credits">Text, word meanings and word audio: Quran.com. Roots and grammar: Quranic Arabic Corpus. Verse recitation: Mahmoud Khalil Al-Husary (EveryAyah). Translation: Saheeh International. Letter names: Abjad-Kids dataset (MIT license); vowel sounds use your device's voice for now.</p>`;
   main().innerHTML = h;
   document.querySelectorAll("[data-surah]").forEach(b => b.onclick = () => { S.ui.view = "read"; openSurah(+b.dataset.surah); syncTabs(); });
@@ -471,6 +485,15 @@ function renderProgress() {
   const msg = t => document.getElementById("bmsg").textContent = t;
   document.getElementById("copyB").onclick = async () => { const ta = document.getElementById("backup"); try { await navigator.clipboard.writeText(ta.value); msg("Copied."); } catch (e) { ta.focus(); ta.select(); msg("Selected. Use Copy from the menu."); } };
   document.getElementById("restoreB").onclick = () => { try { const v = JSON.parse(document.getElementById("backup").value); if (!v.letters || !v.words) throw 0; Object.assign(S, { letters: v.letters, words: v.words, days: v.days || [] }); save(); msg("Restored."); renderProgress(); } catch (e) { msg("That text isn't a valid backup. Paste the whole backup and try again."); } };
+  const dmsg = t => { document.getElementById("dmsg").textContent = t; };
+  const markLearned = list => { const y = addDays(today(), -1); list.forEach(L => { S.letters[L.ch] = { days: [y, today()], box: 2, seen: true, next: addDays(today(), 3) }; }); practiced(); S.ui.set = null; save(); renderProgress(); };
+  document.getElementById("dSet").onclick = () => { const k = currentSetIndex(); if (k >= SETS) return dmsg("All sets are already learned."); markLearned(setLetters(k)); dmsg(`Set ${k + 1} marked learned.`); };
+  document.getElementById("dAll").onclick = () => { markLearned(LETTERS); dmsg("All 28 letters marked learned."); };
+  document.getElementById("dDay").onclick = () => {
+    const back = d => addDays(d, -1);
+    for (const store of [S.letters, S.words]) for (const k in store) { const r = store[k]; if (r.days) r.days = r.days.map(back); if (r.next) r.next = back(r.next); }
+    S.days = S.days.map(back); save(); renderProgress(); dmsg("Moved everything back one day, so the app now treats today as tomorrow.");
+  };
   let armed = false;
   document.getElementById("resetB").onclick = e => { if (!armed) { armed = true; e.target.textContent = "Tap again to erase everything"; return; } const s = S.settings; S = fresh(); S.settings = s; save(); renderProgress(); };
 }
@@ -505,6 +528,7 @@ function render() {
 }
 document.querySelector(".brand").onclick = () => { S.ui.view = "home"; LT = null; RT = null; save(); render(); window.scrollTo(0, 0); };
 document.querySelectorAll("[role=tab][data-view]").forEach(t => t.onclick = () => {
+  if (t.getAttribute("aria-disabled") === "true") return;
   if (S.ui.view === t.dataset.view && t.dataset.view === "read") { S.ui.surah = null; RT = null; }
   S.ui.view = t.dataset.view; LT = null; save(); render(); window.scrollTo(0, 0);
 });

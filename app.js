@@ -259,7 +259,7 @@ function letterCard(L) {
   if (L.ch !== "ا") h += `<span class="break"></span>` + [["َ", "a"], ["ِ", "i"], ["ُ", "u"]].map(v => `<button class="tile vowel" data-say="${L.ch + v[0]}"><span class="g">${L.ch + v[0]}</span><small>${L.tr + v[1]}</small></button>`).join("");
   h += `</div>`;
   if (ex) h += `<p class="subhead exlabel">In the Quran</p><button class="example" id="exL" aria-label="Hear ${ex.tr}"><span class="txt">${ex.en}<span>${ex.tr}</span></span><span class="ar">${ex.ar}</span></button>`;
-  h += `<p class="meta quizhint">Studied the outlined letters? Take a 1-minute quiz.</p><div class="actions"><button class="btn primary" id="testL">${needToday().length ? `Quiz me on these ${needToday().length}` : "Practice quiz"}</button></div>`;
+  h += `<p class="meta quizhint">Studied the outlined letters? Take a 1-minute quiz.</p><div class="actions"><button class="btn primary" id="testL">${needToday().length ? `Quiz me on these ${needToday().length}` : "Practice quiz"}</button><button class="btn" id="markL">${letterLearned(L) ? "Mark not learned" : "Mark learned"}</button></div>`;
   return h;
 }
 function letterTestCard() {
@@ -298,6 +298,12 @@ function wireSpot() {
   document.querySelectorAll(".tile.vowel").forEach(b => b.onclick = () => { speak(b.dataset.say); pulse(b); });
   if ($("exL")) $("exL").onclick = () => { const ex = letterExample(LETTERS[S.ui.letter].ch); play(ex.audio, null, true); pulse($("exL")); };
   if ($("testL")) $("testL").onclick = startLetterTest;
+  if ($("markL")) $("markL").onclick = () => {
+    const L = LETTERS[S.ui.letter];
+    if (letterLearned(L)) delete S.letters[L.ch];
+    else { S.letters[L.ch] = { days: [addDays(today(), -1), today()], box: 2, seen: true, next: addDays(today(), 3) }; practiced(); }
+    save(); renderLetters();
+  };
   if ($("replayL")) $("replayL").onclick = () => { if (LT.target) play(LT.target.audio); pulse($("replayL")); };
   if ($("nextL")) $("nextL").onclick = nextLetterQ;
   if ($("stopL")) $("stopL").onclick = endLetterTest;

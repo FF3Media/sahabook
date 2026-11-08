@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>iPad Audio Test</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Quran Test">
+<meta name="theme-color" content="#1A7A35">
+<style>
+  :root { --bg:#fff; --surface:#f5f5f7; --ink:#1d1d1f; --muted:#6e6e73; --accent:#1a7a35; --bad:#c4302b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#000; --surface:#1c1c1e; --ink:#f5f5f7; --muted:#98989d; --accent:#3dba62; --bad:#ff6b61; } }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:17px/1.45 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+         padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(30px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); }
+  main { max-width: 680px; margin: 0 auto; }
+  h1 { font-size: 30px; letter-spacing: -.02em; margin: 6px 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 18px; }
+  .status { display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom: 22px; }
+  .pill { background:var(--surface); border-radius:12px; padding:10px 12px; font-size:15px; }
+  .pill b { display:block; font-size:13px; color:var(--muted); font-weight:500; }
+  .ok { color: var(--accent); font-weight:600; } .no { color: var(--bad); font-weight:600; }
+  .test { background:var(--surface); border-radius:16px; padding:16px; margin-bottom:12px; }
+  .test h2 { font-size:17px; margin:0 0 4px; }
+  .test p { margin:0 0 12px; color:var(--muted); font-size:15px; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  button { font: inherit; border:0; border-radius:12px; min-height:48px; padding: 0 18px; cursor:pointer; }
+  .play { background: var(--accent); color:#fff; font-weight:600; min-width: 150px; }
+  .big { font-size: 34px; min-width: 90px; }
+  .verdict button { background: var(--bg); color: var(--ink); min-height:44px; }
+  .verdict button.sel-yes { background: var(--accent); color:#fff; }
+  .verdict button.sel-no { background: var(--bad); color:#fff; }
+  .lat { font-size:13px; color:var(--muted); min-width: 90px; }
+  textarea { width:100%; min-height:150px; font: 13px/1.4 ui-monospace, Menlo, monospace; border-radius:12px; border:1px solid var(--surface); background:var(--surface); color:var(--ink); padding:10px; }
+  .steps { background:var(--surface); border-radius:16px; padding:14px 16px 14px 34px; margin-bottom:22px; }
+  .steps li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>iPad audio test</h1>
+  <p class="sub">Checks that sound works when this is installed on your Home Screen, including offline. About 10 minutes.</p>
+
+  <ol class="steps">
+    <li>In Safari, tap Share, then <b>Add to Home Screen</b>. Open it from the Home Screen icon (“Quran Test”).</li>
+    <li>Make sure “Installed” below says <b>Yes</b>, then run tests 1–6 and tap Worked or Didn’t for each.</li>
+    <li>Turn on <b>Airplane Mode</b>, close the app fully (swipe it away), reopen it, and run tests 1–4 again.</li>
+    <li>Flip the <b>silent switch / Silent Mode</b> on and run test 1 once more.</li>
+    <li>Tap <b>Copy results</b> at the bottom and paste them to Claude.</li>
+  </ol>
+
+  <div class="status">
+    <div class="pill"><b>Installed</b><span id="st-installed">…</span></div>
+    <div class="pill"><b>Works offline</b><span id="st-offline">…</span></div>
+    <div class="pill"><b>Connection</b><span id="st-online">…</span></div>
+    <div class="pill"><b>Secure address</b><span id="st-secure">…</span></div>
+  </div>
+
+  <div id="tests"></div>
+
+  <div class="test">
+    <h2>Results</h2>
+    <p>Copy and paste these back to Claude.</p>
+    <textarea id="out" readonly></textarea>
+    <div class="row" style="margin-top:10px"><button class="play" id="copy">Copy results</button><button id="reset" style="background:var(--bg)">Clear</button><span id="copied" class="lat"></span></div>
+  </div>
+</main>
+
+<script>
+const TESTS = [
+  { id: "letter", title: "1. Letter sound (short clip)", desc: "Tap the letter. You should hear “bā’” right away.", label: "ب", big: true, kind: "html", src: "audio/letter-ba.m4a" },
+  { id: "word", title: "2. Quran word (MP3)", desc: "Tap it. You should hear “bismi”.", label: "بِسْمِ", big: true, kind: "html", src: "audio/word-bismi.mp3" },
+  { id: "verse", title: "3. Full verse (about 6 seconds)", desc: "Should play the whole first verse of Al-Fatiha without cutting off.", label: "Play verse", kind: "html", src: "audio/verse-1-1.mp3" },
+  { id: "webaudio", title: "4. Same word, faster engine", desc: "A different way of playing sound that starts faster. Should also say “bismi”.", label: "بِسْمِ", big: true, kind: "web", src: "audio/word-bismi.m4a" },
+  { id: "rapid", title: "5. Rapid tapping", desc: "Tap the letter 5 times quickly. Each tap should restart the sound, with no lag or freeze.", label: "ب", big: true, kind: "html", src: "audio/letter-ba.m4a" },
+  { id: "resume", title: "6. After leaving the app", desc: "Go to the Home Screen for 10 seconds, come back, then tap. Sound should still play.", label: "ب", big: true, kind: "html", src: "audio/letter-ba.m4a" },
+];
+
+const store = { get() { try { return JSON.parse(localStorage.getItem("audio-test") || "{}"); } catch (e) { return {}; } },
+                set(v) { try { localStorage.setItem("audio-test", JSON.stringify(v)); } catch (e) {} } };
+let results = store.get();
+const installed = () => window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+const ctxKey = () => (installed() ? "installed" : "browser") + "-" + (navigator.onLine ? "online" : "offline");
+
+let current = null;
+function playHtml(src, onStart) {
+  try { if (current) { current.pause(); current.currentTime = 0; } } catch (e) {}
+  const a = new Audio(src); current = a;
+  const t0 = performance.now();
+  a.addEventListener("playing", () => onStart(Math.round(performance.now() - t0)), { once: true });
+  return a.play().catch(err => onStart(null, err));
+}
+let ac = null; const buffers = {};
+async function playWeb(src, onStart) {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === "suspended") await ac.resume();
+    if (!buffers[src]) { const r = await fetch(src); buffers[src] = await ac.decodeAudioData(await r.arrayBuffer()); }
+    const t0 = performance.now(); const s = ac.createBufferSource(); s.buffer = buffers[src]; s.connect(ac.destination); s.start(); onStart(Math.round(performance.now() - t0));
+  } catch (err) { onStart(null, err); }
+}
+
+function render() {
+  const box = document.getElementById("tests"); box.innerHTML = "";
+  TESTS.forEach(t => {
+    const key = ctxKey() + ":" + t.id; const r = results[key] || {};
+    const el = document.createElement("div"); el.className = "test";
+    el.innerHTML = `<h2>${t.title}</h2><p>${t.desc}</p>
+      <div class="row"><button class="play ${t.big ? "big" : ""}" lang="ar">${t.label}</button><span class="lat">${r.ms != null ? "started in " + r.ms + " ms" : (r.err ? "error: " + r.err : "")}</span></div>
+      <div class="row verdict" style="margin-top:10px"><span style="font-size:15px;color:var(--muted)">Did it work?</span>
+      <button data-v="yes" class="${r.v === "yes" ? "sel-yes" : ""}">Worked</button><button data-v="no" class="${r.v === "no" ? "sel-no" : ""}">Didn’t</button></div>`;
+    el.querySelector(".play").onclick = () => {
+      const done = (ms, err) => { results[key] = Object.assign(results[key] || {}, { ms, err: err ? String(err.name || err) : undefined }); store.set(results); render(); };
+      t.kind === "web" ? playWeb(t.src, done) : playHtml(t.src, done);
+    };
+    el.querySelectorAll(".verdict button").forEach(b => b.onclick = () => { results[key] = Object.assign(results[key] || {}, { v: b.dataset.v }); store.set(results); render(); });
+    box.appendChild(el);
+  });
+  status(); summary();
+}
+
+function status() {
+  const set = (id, good, text) => { const e = document.getElementById(id); e.textContent = text; e.className = good ? "ok" : "no"; };
+  set("st-installed", installed(), installed() ? "Yes" : "No, open from Home Screen");
+  set("st-online", true, navigator.onLine ? "Online" : "Offline");
+  set("st-secure", window.isSecureContext, window.isSecureContext ? "Yes" : "No");
+  if (!("serviceWorker" in navigator)) return set("st-offline", false, "Not supported");
+  navigator.serviceWorker.getRegistration().then(reg => set("st-offline", !!(reg && reg.active), reg && reg.active ? "Ready" : "Setting up…"));
+}
+
+function summary() {
+  const lines = ["iPad audio test results", "Device: " + navigator.userAgent, "Installed now: " + installed() + " · Online now: " + navigator.onLine, ""];
+  Object.keys(results).sort().forEach(k => { const r = results[k]; lines.push(`${k}: ${r.v || "not marked"}${r.ms != null ? " · " + r.ms + " ms" : ""}${r.err ? " · error " + r.err : ""}`); });
+  document.getElementById("out").value = lines.join("\n");
+}
+
+document.getElementById("copy").onclick = async () => {
+  const ta = document.getElementById("out");
+  try { await navigator.clipboard.writeText(ta.value); document.getElementById("copied").textContent = "Copied"; }
+  catch (e) { ta.focus(); ta.select(); document.getElementById("copied").textContent = "Selected. Use Copy."; }
+};
+document.getElementById("reset").onclick = () => { results = {}; store.set(results); render(); };
+window.addEventListener("online", render); window.addEventListener("offline", render);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").then(() => navigator.serviceWorker.ready).then(status).catch(status);
+render();
+</script>
+</body>
+</html>
